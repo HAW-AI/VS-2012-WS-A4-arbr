@@ -2,6 +2,7 @@
 %% Created: 08.01.2013
 %% Description: TODO: Add description to datasource
 -module(datasource).
+-behaviour(gen_server).
 -import(util, [log/2]).
 %%
 %% Include files
@@ -10,8 +11,17 @@
 %%
 %% Exported Functions
 %%
--export([]).
+
+%% callbacks für gen_server
+-export([init/1,
+         handle_call/3,
+         handle_cast/2,
+         handle_info/2,
+         terminate/2,
+         code_change/3]).
 -compile([export_all]).
+
+
 -record(state,{pollPID, value=""}).
 %%
 %% API Functions

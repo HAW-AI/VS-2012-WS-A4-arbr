@@ -68,6 +68,7 @@ handle_cast({datasink, Data},State)->
 handle_cast({nextSlot, SenderPID}, State)->
 	log("Der Sender hat nach dem nächsten Slot gefragt"),
 	NextSlot = calculate_next_slot(),
+	% werkzeug:shuffle(substract(lists:seq(0,19), dict:fetch_keys(State#state.used_slots))),
 	{noreply, State#state{ next_slot=NextSlot }};
 
 calculate_next_slot() -> 0.

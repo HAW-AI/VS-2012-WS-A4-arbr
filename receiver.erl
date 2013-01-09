@@ -33,9 +33,9 @@ init([CoordinatorPID,Socket]) ->
 	gen_udp:controlling_process(Socket, self()),
 	{ok, #state{coordinatorPID=CoordinatorPID, socket=Socket}}.
 
-terminate(_Reason, State) ->
+terminate(normal, State) ->
 	gen_udp:close(State#state.socket),
-	log("Reciever wurde beendet").
+	log("Receiver wurde beendet").
 
 %%TODO: Slot
 handle_cast({udp, _Socket, _IP, _Port, Packet}, State) ->
@@ -61,7 +61,7 @@ handle_cast(Any, State) ->
 %%
 
 log(Message) ->
-	util:log("Reciever.log",Message).
+	util:log("Receiver.log",Message).
 
 
 

@@ -29,14 +29,14 @@ init([RecPort,SendPort,Station,MulticastIP,LocalIP])->
 										   binary,inet,
 										   {multicast_loop, true},
 										   {add_membership,{MulticastIP,LocalIP}},
-										   {multicast_if, LocalIP},]
+										   {multicast_if, LocalIP}]
 								 ),
 	{ok,SendSocket} = gen_udp:open(SendPort,[
 											 binary,
 											 inet,
 											 {multicast_loop, true},
 											 {add_membership,{MulticastIP,LocalIP}},
-											 {multicast_if, LocalIP},]
+											 {multicast_if, LocalIP}]
 								  ),
 
 	{ok,ReceiverPID} = receiver:start(self(),RecSocket),
@@ -56,7 +56,7 @@ next_frame_timer() ->
 handle_cast(frame_start, State) ->
 	ok, % send wished or free slot to sender
 	next_frame_timer(),
-	{noreply, State#state{ used_slots=dict:new(), wished_slots=dict:new() }}.
+	{noreply, State#state{ used_slots=dict:new(), wished_slots=dict:new() }};
 
 handle_cast({datasink, Data},State)->
 	log("Neue Nachricht empfangen: ~p",[Data]),

@@ -3,11 +3,11 @@
 %% Description: TODO: Add description to datasource
 -module(datasource).
 -behaviour(gen_server).
--import(util, [log/2]).
+
 %%
 %% Include files
 %%
-
+-import(util, [log/2]).
 %%
 %% Exported Functions
 %%
@@ -62,7 +62,7 @@ handle_cast(Any, State) ->
 	log("Unbekannte Nachricht: ~p",[Any]),
 	{noreply, State}.
 
-terminate(_Reason, State) ->
+terminate(normal, State) ->
   exit(State#state.pollPID, normal),
   ok.
 

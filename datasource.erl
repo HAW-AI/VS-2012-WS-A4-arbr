@@ -41,18 +41,18 @@ poll(DatasourcePID) ->
 			log("EOF erreicht"),
 			exit(normal);
 		Value -> 
-			gen_server:cast(DatasourcePID, {input,Value}),
+			gen_server:cast(DatasourcePID, {newvalue,Value}),
 			poll(DatasourcePID)
 	end.
 
-handle_cast({input, Value}, State) ->
+handle_cast({newvalue, Value}, State) ->
 	log("Neue Nachricht aus der Java-Datenquelle: "++Value),
 	{noreply, State#state{value=Value}};
 
-handle_cast({get_data, PID}, State) ->
+handle_cast({get_next_value, SenderPID}, State) ->
 	log("Der Sender hat die nächste Nachricht angefordert"),
 	%% sender wird als final state machine implementiert
-	gen_fsm:send_event(PID, {input, State#state.value}),
+	gen_fsm:send_event(SenderPID, {next_value, State#state.value}),
 	{noreply, State#state{value=""}};
 
 handle_cast(stop, State) ->

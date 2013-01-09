@@ -54,6 +54,9 @@ next_frame_timer() ->
 	erlang:send_after(1000 - (util:timestamp() rem 1000), self(), frame_start).
 
 handle_cast(frame_start, State) ->
+	% send all non collided messages to sink
+	CollisionFreeMessages = dict:filter(fun(Key, Value) -> lists:length(Value) == 1 end),
+	dict:fold(fun(Key, Value, Accu) -> gen_server:cast(self(),{ datasink, Value }) end, ok, CollisionFreeMessages),
 	ok, % send wished or free slot to sender
 	next_frame_timer(),
 	{noreply, State#state{ used_slots=dict:new(), wished_slots=dict:new() }};
@@ -71,7 +74,7 @@ handle_cast({recieved, RecievedTimestamp, Packet}, State)->
 		true ->
 			log("Collision!") % by dict:fetch(Slot, State#state.used_slots)
 	end,
-	UsedSlots = dict:append(Slot, { Station, StationNumber, Data }, State#state.used_slots),
+	UsedSlots = dict:append(Slot, lists:faltten([ Station, StationNumber, Data ]), State#state.used_slots),
 	WishedSlots = dict:append(SlotWish, StationNumber, State#state.wished_slots),
 	{noreply, State#state{ used_slots=UsedSlots, wished_slots=WishedSlots }}.
 

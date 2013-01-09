@@ -54,7 +54,7 @@ next_frame_timer() ->
 	erlang:send_after(1000 - (util:timestamp() rem 1000), self(), frame_start).
 
 handle_cast(frame_start, State) ->
-	% send all non collided messages to sink
+	% send all non collided messages to sink (ugly hack!)
 	CollisionFreeMessages = dict:filter(fun(Key, Value) -> lists:length(Value) == 1 end),
 	dict:fold(fun(Key, Value, Accu) -> gen_server:cast(self(),{ datasink, Value }) end, ok, CollisionFreeMessages),
 	ok, % send wished or free slot to sender

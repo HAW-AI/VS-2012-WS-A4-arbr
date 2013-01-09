@@ -42,7 +42,9 @@ handle_cast({udp, _Socket, _IP, _Port, Packet}, State) ->
 	log("Paket angekommen"),
 	{_,Sec,_} = timestamp(),
 	Timestamp = Sec * 1000,
-	Slot = 0,
+	%50ms - Slotlänge
+	%1000ms - Framelänge
+	Slot = (Timestamp rem 1000) / 50,
 	gen_server:cast(State#state.coordinatorPID,{recieved, Slot, Timestamp, Packet}),
 	{noreply, State};
 

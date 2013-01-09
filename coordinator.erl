@@ -14,13 +14,13 @@
 
 -define(SENDPORT,14010).
 
--record(state, {datasourcePID, receiverPID, senderPID, sendport, recport, wished_slots=dict:new(), used_slots=dict:new() }).
+-record(state, {receiverPID, senderPID, sendport, recport, wished_slots=dict:new(), used_slots=dict:new() }).
 
 start(RecPort,Station,MulticastIP,LocalIP)->
 	gen_server:start(?MODULE,[RecPort,?SENDPORT,Station,MulticastIP,LocalIP],[]).
 
 init([RecPort,SendPort,Station,MulticastIP,LocalIP])->
-	{ok,DatasourcePID} = datasource:start(),
+	
 
 	%http://erldocs.com/R15B/kernel/gen_udp.html
 	%http://erldocs.com/R15B/kernel/inet.html#setopts/2
@@ -44,7 +44,7 @@ init([RecPort,SendPort,Station,MulticastIP,LocalIP])->
 
 	next_frame_timer(),
 
-	{ok, #state{datasourcePID=DatasourcePID,
+	{ok, #state{
 				receiverPID=ReceiverPID,
 				senderPID=SenderPID,
 				sendport=SendPort,
@@ -88,7 +88,6 @@ parse_packet(Packet) ->
   {Station, StationNumber, Data, Slot, Timestamp }.
 
 terminate(normal,State)->
-	gen_server:cast(State#state.datasourcePID,{stop}),
 	gen_server:cast(State#state.receiverPID,{stop}),
 	gen_fsm:cast(State#state.senderPID,{stop}),
 	ok.

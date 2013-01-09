@@ -10,12 +10,12 @@
 % - start sender
 % - manage slots
 
--define(?SENDPORT,14010).
+-define(SENDPORT,14010).
 
 -record(state, {datasourcePID, receiverPID, senderPID, sendport, recport}).
 
 start(RecPort,Station,MulticastIP)->
-	gen_server:start(?MODUL,[RecPort,?SENDPORT,Team,Station,MulticastIP],[]).
+	gen_server:start(?MODULE,[RecPort,?SENDPORT,Station,MulticastIP],[]).
 
 init([RecPort,SendPort,Station,MulticastIP])->
 	{ok,DatasourcePID} = datasource:start(),
@@ -27,16 +27,22 @@ init([RecPort,SendPort,Station,MulticastIP])->
 	
 	{ok,ReceiverPID} = receiver:start(self(),RecSocket),
 	%TODO: Adress
-	{ok,SenderPID} = sender:start(seld(),SendSocket,_,SendPort),
+	Adress = "",
+	{ok,SenderPID} = sender:start(self(),SendSocket,Adress,SendPort),
 	
 	{ok, #state{datasourcePID=DatasourcePID,
 				receiverPID=ReceiverPID,
 				senderPID=SenderPID,
 				sendport=SendPort,
-				recport=RecPort}.
+				recport=RecPort}}.
 
 handle_cast({datasink, Data},State)->
-	log("Neue Nachricht empfangen: ~p",[Data]).
+	log("Neue Nachricht empfangen: ~p",[Data]);
+
+%TODO: Slotberechnung
+handle_cast({recieved, Timestamp, Packet},State)->
+	ok.
+
 
 terminate(normal,State)->
 	gen_server:cast(State#state.datasourcePID,{stop}),

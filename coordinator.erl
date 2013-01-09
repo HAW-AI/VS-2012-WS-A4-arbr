@@ -14,7 +14,7 @@
 
 -define(SENDPORT,14010).
 
--record(state, {datasourcePID, receiverPID, senderPID, sendport, recport, slots=dict:new()}).
+-record(state, {datasourcePID, receiverPID, senderPID, sendport, recport, wished_slots=dict:new(), used_slots=dict:new() }).
 
 start(RecPort,Station,MulticastIP,LocalIP)->
 	gen_server:start(?MODULE,[RecPort,?SENDPORT,Station,MulticastIP,LocalIP],[]).
@@ -47,14 +47,24 @@ init([RecPort,SendPort,Station,MulticastIP,LocalIP])->
 				recport=RecPort}}.
 
 handle_cast({datasink, Data},State)->
-	log("Neue Nachricht empfangen: ~p",[Data]);
+	log("Neue Nachricht empfangen: ~p",[Data]),
+	{noreply, State};
 
 %TODO: Slotberechnung
-handle_cast({recieved, Timestamp, Packet},State)->
+handle_cast({recieved, Timestamp, Packet}, State)->
 	{_, StationNumber, _, SlotWish, Timestamp} = parse_packet(Packet),
 	Slot = util:slot_from(Timestamp),
 
-	ok.
+	case slot_collision(Slot, State#state.used_slots) of
+		true ->
+			log("Collision!") % by dict:fetch(Slot, State#state.used_slots)
+	end,
+	UsedSlots = dict:append(Slot, StationNumber, State#state.used_slots),
+	WishedSlots = dict:append(SlotWish, StationNumber, State#state.wished_slots),
+	{noreply, State#state{ used_slots=UsedSlots, wished_slots=WishedSlots }}.
+
+slot_collision(Slot, UsedSlots) ->
+	dict:is_key(Slot, UsedSlots).
 
 parse_packet(Packet) ->
 	<<Station:8/binary,

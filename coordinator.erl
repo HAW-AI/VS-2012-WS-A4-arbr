@@ -40,7 +40,7 @@ init([RecPort,SendPort,Station,MulticastIP,LocalIP])->
 	{ok,ReceiverPID} = receiver:start(self(),RecSocket),
 	{ok,SenderPID} = sender:start(self(),SendSocket,MulticastIP,RecPort),
 
-	next_frame(),
+	next_frame_timer(),
 
 	{ok, #state{datasourcePID=DatasourcePID,
 				receiverPID=ReceiverPID,
@@ -48,12 +48,12 @@ init([RecPort,SendPort,Station,MulticastIP,LocalIP])->
 				sendport=SendPort,
 				recport=RecPort}}.
 
-next_frame() ->
+next_frame_timer() ->
 	erlang:send_after(1000 - (util:timestamp() rem 1000), self(), frame_start).
 
 handle_cast(frame_start, State) ->
 	ok, % send wished or free slot to sender
-	next_frame(),
+	next_frame_timer(),
 	{noreply, State#state{ used_slots=dict:new(), wished_slots=dict:new() }}.
 
 handle_cast({datasink, Data},State)->

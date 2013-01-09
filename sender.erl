@@ -12,7 +12,7 @@
 -export([init/1, handle_sync_event/4, handle_info/3, code_change/4, terminate/3]).
 
 -behaviour(gen_fsm).
--record( state, { coordinator, socket, datasource }).
+-record( state, { coordinator, socket, datasource, address, port, message }).
 %%
 %% API Functions
 %%
@@ -31,15 +31,17 @@ slot_received({ slot, Slot }, State) ->
 message_received({ message, Message }, State) ->
   % fetch next slot from coordinator
   gen_server:cast(State#state.coordinator, { nextSlot, self() }),
-  { next_state, next_slot_received, State }.
+  { next_state, next_slot_received, State#state{ message=Message} }.
 
 next_slot_received({ nextSlot, Slot }, State) ->
+  % if slot not passed
   % deliver message, and wait for next frame
+  % else ?
   Socket = State#state.socket,
   Address = State#state.address,
   Port = State#state.port,
-  Packet = ok,
-
+  Message = State#state.message,
+  Packet = build_packet(Message, Slot),
   gen_udp:send(Socket, Address, Port, Packet),
   { next_state, slot_received, State }.
 
@@ -51,6 +53,9 @@ terminate( StateName, StateData, State) ->
 %%
 %% non API Functions
 %%
+build_packet(Message, Slot) ->
+  ok.
+
 log(Message) ->
 	util:log( "Datasource.log", Message ).
 

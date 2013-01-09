@@ -33,7 +33,7 @@ init([CoordinatorPID,Socket]) ->
 	gen_udp:controlling_process(Socket, self()),
 	{ok, #state{coordinatorPID=CoordinatorPID, socket=Socket}}.
 
-terminate(normal, State) ->
+terminate(shutdown, State) ->
 	gen_udp:close(State#state.socket),
 	log("Receiver wurde beendet").
 

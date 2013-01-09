@@ -1,0 +1,3 @@
+-module(coordinator).
+-author("Ben Rexin <benjamin.rexin@haw-hamburg.de>").
+-compile([export_all]).

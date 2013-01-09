@@ -55,7 +55,7 @@ next_frame_timer() ->
 
 handle_cast(frame_start, State) ->
 	% send all non collided messages to sink (ugly hack!)
-	CollisionFreeMessages = dict:filter(fun(Key, Value) -> lists:length(Value) == 1 end),
+	CollisionFreeMessages = dict:filter(fun(Key, Value) -> lists:length(Value) == 1 end, State#state.used_slots),
 	dict:fold(fun(Key, Value, Accu) -> gen_server:cast(self(),{ datasink, Value }) end, ok, CollisionFreeMessages),
 	ok, % send wished or free slot to sender
 	next_frame_timer(),

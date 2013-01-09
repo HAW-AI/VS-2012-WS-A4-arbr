@@ -41,10 +41,7 @@ terminate(normal, State) ->
 handle_cast({udp, _Socket, _IP, _Port, Packet}, State) ->
 	log("Paket angekommen"),
 	Timestamp = util:timestamp(),
-	%50ms - Slotlänge
-	%1000ms - Framelänge
-	Slot = (Timestamp rem 1000) / 50,
-	gen_server:cast(State#state.coordinatorPID,{recieved, Slot, Timestamp, Packet}),
+	gen_server:cast(State#state.coordinatorPID,{recieved, Timestamp, Packet}),
 	{noreply, State};
 
 handle_cast(stop, State) ->

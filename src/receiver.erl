@@ -37,10 +37,11 @@ terminate(_Reason, State) ->
 	gen_udp:close(State#state.socket),
 	log("Reciever wurde beendet").
 
-%%TODO: Slot & Timestamp
+%%TODO: Slot
 handle_cast({udp, _Socket, _IP, _Port, Packet}, State) ->
 	log("Paket angekommen"),
-	Timestamp = 0,
+	{_,Sec,_} = timestamp(),
+	Timestamp = Sec * 1000,
 	Slot = 0,
 	gen_server:cast(State#state.coordinatorPID,{recieved, Slot, Timestamp, Packet}),
 	{noreply, State};
@@ -59,6 +60,7 @@ handle_cast(Any, State) ->
 
 log(Message) ->
 	util:log("Reciever.log",Message).
+
 
 
 %% durch gen_server vorgegeben

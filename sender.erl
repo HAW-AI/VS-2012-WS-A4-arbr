@@ -16,12 +16,12 @@
 %%
 %% API Functions
 %%
-start(Coordinator,Socket)->
-  gen_fsm:start( ?MODULE, [ Coordinator, Socket ], [] ).
+start( Coordinator, Socket, Address, Port )->
+  gen_fsm:start( ?MODULE, [ Coordinator, Socket, Address, Port ], [] ).
 
-init([ Coordinator, Socket ]) ->
+init([ Coordinator, Socket, Address, Port ]) ->
   { ok, Datasource } = datasource:start(),
-  { ok, get_data, #state{coordinator = Coordinator, socket=Socket, datasource=Datasource }}.
+  { ok, get_data, #state{ coordinator=Coordinator, socket=Socket, datasource=Datasource, address=Address, port=Port }}.
 
 slot_received({ slot, Slot }, State) ->
   % fetch message from datasource
@@ -35,10 +35,13 @@ message_received({ message, Message }, State) ->
 
 next_slot_received({ nextSlot, Slot }, State) ->
   % deliver message, and wait for next frame
+  Socket = State#state.socket,
+  Address = State#state.address,
+  Port = State#state.port,
+  Packet = ok,
 
-  %gen_udp:send(Socket, Address, Port, Packet)
-
-  ok.
+  gen_udp:send(Socket, Address, Port, Packet),
+  { next_state, slot_received, State }.
 
 terminate( StateName, StateData, State) ->
 	gen_server:cast(State#state.datasource, stop),

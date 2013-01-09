@@ -10,7 +10,7 @@
 % - start sender
 % - manage slots
 
--export([init/1, handle_sync_event/4, handle_cast/2, handle_info/2, code_change/3, terminate/2, handle_event/3, handle_call/3]).
+-export([init/1, handle_cast/2, handle_info/2, code_change/3, terminate/2, handle_call/3]).
 
 -define(SENDPORT,14010).
 

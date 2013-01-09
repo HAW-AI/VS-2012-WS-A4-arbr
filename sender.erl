@@ -49,6 +49,9 @@ terminate( StateName, StateData, State) ->
 	gen_server:cast(State#state.datasource, stop),
 	gen_udp:close(State#state.socket),
 	ok.
+handle_cast(stop, State) ->
+  utility:log("Sender wird ausgeschaltet"),
+  {stop, normal, State};
 
 %%
 %% non API Functions
@@ -66,7 +69,7 @@ timestamp() ->
   (MegaSecs * math:pow(10,9)) * (Secs * math:pow(10,3)) * (MicroSecs div 1000).
 
 log(Message) ->
-	util:log( "Datasource.log", Message ).
+	util:log( "Sender.log", Message ).
 
 %% gen_fsm API requirements
 state_name( _Event, _From, State ) ->

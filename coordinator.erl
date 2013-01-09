@@ -20,10 +20,17 @@ start(RecPort,Station,MulticastIP)->
 init([RecPort,SendPort,Station,MulticastIP])->
 	{ok,DatasourcePID} = datasource:start(),
 	
+	
 	{ok, #state{datasourcePID=DatasourcePID,
 				sendport=SendPort,
 				recport=RecPort}.
 
+terminate(normal,State)->
+	gen_server:cast(State#state.datasourcePID,{stop}),
+	gen_server:cast(State#state.receiverPID,{stop}),
+	gen_fsm:cast(State#state.senderPID,{stop}),
+	ok.
+	
 
 
 log(Message) ->

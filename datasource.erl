@@ -41,6 +41,7 @@ poll(DatasourcePID) ->
 			log("EOF erreicht"),
 			exit(normal);
 		Value -> 
+			log("blub"),
 			gen_server:cast(DatasourcePID, {newvalue,Value}),
 			poll(DatasourcePID)
 	end.

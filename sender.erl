@@ -40,8 +40,10 @@ next_slot_received({ nextSlot, Slot }, State) ->
   % if slot not passed
   % deliver message, and wait for next frame
   % else ?
-  case time_till_slot(State#state.slot) > 0 of
+  TimeLeft = time_till_slot(State#state.slot),
+  case TimeLeft > 0 of
     true ->
+      timer:sleep(TimeLeft),
       Socket = State#state.socket,
       Address = State#state.address,
       Port = State#state.port,

@@ -32,6 +32,7 @@ start() ->
 
 init(_Args) ->
 	PollPID = spawn(fun() -> poll(self()) end),
+	register(dq, self()),
 	{ok, #state{pollPID=PollPID}}.
 
 poll(DatasourcePID) ->

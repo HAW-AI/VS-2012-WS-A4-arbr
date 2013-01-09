@@ -27,7 +27,8 @@ init([]) ->
   { ok, Datasource } = datasource:start(),
 	log("Nachricht an DQ gesendet"),
 	gen_server:cast(dq,{newvalue,"abc"}),
-  { ok, slot_received, #state{ datasource=Datasource}}.
+	gen_server:cast( Datasource, {get_next_value, self() }),
+  { ok, slot_received, #state{ datasource=Datasource,slot="",message=""}}.
 
 slot_received({ slot, Slot }, State) ->
   gen_server:cast( State#state.datasource, {get_next_value, self() }),

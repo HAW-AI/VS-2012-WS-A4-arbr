@@ -62,7 +62,8 @@ build_packet(Message, Slot) ->
      Timestamp:64/integer-big>>.
 
 timestamp() ->
-  {MegaSecs, Secs, MicroSecs} = now().
+  {MegaSecs, Secs, MicroSecs} = now(), % would erlang:timestamp() also work? i'm unsure
+  (MegaSecs * math:pow(10,9)) * (Secs * math:pow(10,3)) * (MicroSecs div 1000).
 
 log(Message) ->
 	util:log( "Datasource.log", Message ).

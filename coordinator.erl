@@ -14,7 +14,7 @@
 
 -define(SENDPORT,14010).
 
--record(state, {receiverPID, senderPID, sendport, recport, wished_slots=dict:new(), used_slots=dict:new() }).
+-record(state, {receiverPID, senderPID, sendport, recport, wished_slots=dict:new(), used_slots=dict:new(), next_slot }).
 
 start(RecPort,Station,MulticastIP,LocalIP)->
 	gen_server:start(?MODULE,[RecPort,?SENDPORT,Station,MulticastIP,LocalIP],[]).
@@ -67,7 +67,10 @@ handle_cast({datasink, Data},State)->
 
 handle_cast({nextSlot, SenderPID}, State)->
 	log("Der Sender hat nach dem nächsten Slot gefragt"),
-	{noreply, State};
+	NextSlot = calculate_next_slot(),
+	{noreply, State#state{ next_slot=NextSlot }};
+
+calculate_next_slot() -> 0.
 
 %TODO: Slotberechnung
 handle_cast({recieved, RecievedTimestamp, Packet}, State)->

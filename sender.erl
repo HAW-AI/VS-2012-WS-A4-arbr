@@ -28,7 +28,7 @@ init([ Coordinator, Socket, Address, Port ]) ->
 
 % fetch message from datasource
 slot_received({ slot, Slot }, State) ->
-  gen_server:cast( State#state.datasource, { get_data, self() }),
+  gen_server:cast( State#state.datasource, { get_next_value, self() }),
   { next_state, message_received, State#state{ slot=Slot } }.
 
 message_received({ message, Message }, State) ->

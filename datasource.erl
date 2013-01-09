@@ -55,7 +55,7 @@ handle_cast({get_next_value, SenderPID}, State) ->
 	log("Der Sender hat die nächste Nachricht angefordert"),
 	%% sender wird als final state machine implementiert
 	log("Nächste Nachricht ist: ~p",[State#state.value]),
-	gen_fsm:send_event(SenderPID, {next_value, State#state.value}),
+	gen_fsm:send_event(SenderPID, {message, State#state.value}),
 	{noreply, State#state{value=""}};
 
 handle_cast(stop, State) ->

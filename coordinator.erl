@@ -26,19 +26,17 @@ init([RecPort,SendPort,Station,MulticastIP,LocalIP])->
 	{ok,RecSocket} = gen_udp:open(RecPort,[
 										   binary,inet,
 										   {multicast_loop, true},
-										   {add_membership,{MulticastIP,LocalIP}]
+										   {add_membership,{MulticastIP,LocalIP}}]
 								 ),
 	{ok,SendSocket} = gen_udp:open(SendPort,[
 											 binary,
 											 inet,
 											 {multicast_loop, true},
-											 {add_membership,{MulticastIP,LocalIP}]
+											 {add_membership,{MulticastIP,LocalIP}}]
 								  ),
 	
 	{ok,ReceiverPID} = receiver:start(self(),RecSocket),
-	%TODO: Adress
-	Adress = "",
-	{ok,SenderPID} = sender:start(self(),SendSocket,Adress,SendPort),
+	{ok,SenderPID} = sender:start(self(),SendSocket,MulticastIP,RecPort),
 	
 	{ok, #state{datasourcePID=DatasourcePID,
 				receiverPID=ReceiverPID,

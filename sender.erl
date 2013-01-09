@@ -15,7 +15,7 @@
 %% Exported Functions
 %%
 %% gen_fsm erwartet bestimmte exports, export_all reicht nicht aus
--export([]).
+-export([init/1, handle_sync_event/4, handle_info/3, code_change/4, terminate/3]).
 
 -record(state,{coordinatorPID,socket,datasourcePID}).
 %%
@@ -46,3 +46,16 @@ get_data({slot,Slot},State) ->
 %%
 log(Message) ->
 	util:log("Datasource.log",Message).
+
+%%durch gen_fsm vorgegeben
+state_name(_Event, _From, State) ->
+  {reply, ok, state_name, State}.
+
+handle_sync_event(_Event, _From, StateName, State) ->
+  {reply, ok, StateName, State}.
+
+handle_info(_Info, StateName, State) ->
+  {noreply, StateName, State}.
+
+code_change(_OldVsn, StateName, State, _Extra) ->
+  {ok, StateName, State}.

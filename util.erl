@@ -2,6 +2,9 @@
 -author("Ben Rexin <benjamin.rexin@haw-hamburg.de>").
 -compile([export_all]).
 -import(werkzeug, [logging/2]).
+-define(SLOTS_PER_FRAME, 20).
+-define(SLOT_LENGTH, 1000/?SLOTS_PER_FRAME).
+
 
 log(File, Message) -> log(File, Message, []).
 log(File, Message, Data) ->
@@ -21,3 +24,13 @@ millisec() ->
 timestamp() ->
   {MegaSecs, Secs, MicroSecs} = now(), % would erlang:timestamp() also work? i'm unsure
   (MegaSecs * math:pow(10,9)) * (Secs * math:pow(10,3)) * (MicroSecs div 1000).
+
+time_till_slot(Slot) ->
+  (Slot * ?SLOT_LENGTH) - time_in_frame.
+
+slot_from(Timestamp) ->
+  math:floor((Timestamp rem 1000) / ?SLOT_LENGTH).
+
+time_in_frame() ->
+  { _, _, MicroSecs } = now(),
+  MicroSecs div 1000.

@@ -65,6 +65,9 @@ handle_cast({datasink, Data},State)->
 	log("Neue Nachricht empfangen: ~p",[Data]),
 	{noreply, State};
 
+handle_cast({nextSlot, SenderPID}, State)->
+	ok;
+
 %TODO: Slotberechnung
 handle_cast({recieved, RecievedTimestamp, Packet}, State)->
 	{ Station, StationNumber, Data, SlotWish, Timestamp} = parse_packet(Packet),

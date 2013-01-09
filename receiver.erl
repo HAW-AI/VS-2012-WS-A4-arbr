@@ -3,7 +3,7 @@
 %% Description: TODO: Add description to receiver
 -module(receiver).
 -behaviour(gen_server).
--import(util,[log/2]).
+-import(util,[log/2,timestamp/0]).
 %%
 %% Include files
 %%
@@ -41,7 +41,7 @@ terminate(shutdown, State) ->
 handle_cast({udp, _Socket, _IP, _Port, Packet}, State) ->
 	log("Paket angekommen"),
 	{_,Sec,_} = now(),
-	Timestamp = Sec * 1000,
+	Timestamp = util:timestamp(),
 	%50ms - Slotlänge
 	%1000ms - Framelänge
 	Slot = (Timestamp rem 1000) / 50,

@@ -63,9 +63,9 @@ handle_cast({datasink, Data},State)->
 	{noreply, State};
 
 %TODO: Slotberechnung
-handle_cast({recieved, Timestamp, Packet}, State)->
+handle_cast({recieved, RecievedTimestamp, Packet}, State)->
 	{_, StationNumber, _, SlotWish, Timestamp} = parse_packet(Packet),
-	Slot = util:slot_from(Timestamp),
+	Slot = util:slot_from(Timestamp), % or from RecievedTimestamp?
 
 	case slot_collision(Slot, State#state.used_slots) of
 		true ->

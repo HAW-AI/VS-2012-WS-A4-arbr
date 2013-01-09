@@ -25,9 +25,18 @@ init([RecPort,SendPort,Station,MulticastIP])->
 	{ok,RecSocket} = gen_udp:open(RecPort,[binary,inet,{broadcast,true}]),
 	{ok,SendSocket} = gen_udp:open(SendPort,[binary,inet,{broadcast,true}]),
 	
+	{ok,ReceiverPID} = receiver:start(self(),RecSocket),
+	%TODO: Adress
+	{ok,SenderPID} = sender:start(seld(),SendSocket,_,SendPort),
+	
 	{ok, #state{datasourcePID=DatasourcePID,
+				receiverPID=ReceiverPID,
+				senderPID=SenderPID,
 				sendport=SendPort,
 				recport=RecPort}.
+
+handle_cast({datasink, Data},State)->
+	log("Neue Nachricht empfangen: ~p",[Data]).
 
 terminate(normal,State)->
 	gen_server:cast(State#state.datasourcePID,{stop}),

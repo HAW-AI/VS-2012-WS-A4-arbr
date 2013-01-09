@@ -14,16 +14,26 @@
 
 -record(state, {datasourcePID, receiverPID, senderPID, sendport, recport}).
 
-start(RecPort,Station,MulticastIP)->
-	gen_server:start(?MODULE,[RecPort,?SENDPORT,Station,MulticastIP],[]).
+start(RecPort,Station,MulticastIP,LocalIP)->
+	gen_server:start(?MODULE,[RecPort,?SENDPORT,Station,MulticastIP,LocalIP],[]).
 
-init([RecPort,SendPort,Station,MulticastIP])->
+init([RecPort,SendPort,Station,MulticastIP,LocalIP])->
 	{ok,DatasourcePID} = datasource:start(),
 	
 	%http://erldocs.com/R15B/kernel/gen_udp.html
 	%http://erldocs.com/R15B/kernel/inet.html#setopts/2
-	{ok,RecSocket} = gen_udp:open(RecPort,[binary,inet,{broadcast,true}]),
-	{ok,SendSocket} = gen_udp:open(SendPort,[binary,inet,{broadcast,true}]),
+	%http://stackoverflow.com/questions/78826/erlang-multicast
+	{ok,RecSocket} = gen_udp:open(RecPort,[
+										   binary,inet,
+										   {multicast_loop, true},
+										   {add_membership,{MulticastIP,LocalIP}]
+								 ),
+	{ok,SendSocket} = gen_udp:open(SendPort,[
+											 binary,
+											 inet,
+											 {multicast_loop, true},
+											 {add_membership,{MulticastIP,LocalIP}]
+								  ),
 	
 	{ok,ReceiverPID} = receiver:start(self(),RecSocket),
 	%TODO: Adress

@@ -36,7 +36,8 @@ init([RecPort,SendPort,Station,MulticastIP,LocalIP])->
 											 inet,
 											 {multicast_loop, true},
 											 {add_membership,{MulticastIP,LocalIP}},
-											 {multicast_if, LocalIP}]
+											 {multicast_if, LocalIP},
+											 {ip,LocalIP}]
 								  ),
 
 	{ok,ReceiverPID} = receiver:start(self(),RecSocket),

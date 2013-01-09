@@ -25,14 +25,19 @@ init([ Coordinator, Socket ]) ->
 
 slot_received({ slot, Slot }, State) ->
   % fetch message from datasource
-  ok.
+  gen_server:cast(State#state.datasource, { get_data, self() }),
+  { next_state, message_received, State }.
 
 message_received({ message, Message }, State) ->
   % fetch next slot from coordinator
-  ok.
+  gen_server:cast(State#state.coordinator, { nextSlot, self() }),
+  { next_state, next_slot_received, State }.
 
 next_slot_received({ nextSlot, Slot }, State) ->
   % deliver message, and wait for next frame
+
+  %gen_udp:send(Socket, Address, Port, Packet)
+
   ok.
 
 terminate( StateName, StateData, State) ->

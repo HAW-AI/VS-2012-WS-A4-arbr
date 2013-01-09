@@ -35,7 +35,6 @@ init([RecPort,SendPort,Station,MulticastIP,LocalIP])->
 											 binary,
 											 inet,
 											 {multicast_loop, true},
-											 {add_membership,{MulticastIP,LocalIP}},
 											 {multicast_if, LocalIP},
 											 {ip,LocalIP}]
 								  ),

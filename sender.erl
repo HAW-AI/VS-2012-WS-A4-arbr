@@ -70,7 +70,12 @@ handle_event(stop, _StateName, State) ->
 
 % Bit Syntax Expressions (Value:Size/TypeSpecifierList) http://www.erlang.org/doc/reference_manual/expressions.html
 build_packet( Message, Slot ) ->
-  Timestamp = timestamp().
+  Timestamp = timestamp(),
+  Data = list_to_binary(Message),
+  % Bit Syntax Expressions (Value:Size/TypeSpecifierList) http://www.erlang.org/doc/reference_manual/expressions.html
+  << Data:24/binary,
+    Slot:8/integer-big,
+    Timestamp:64/integer-big>>.
 
 log(Message) ->
 	util:log( "Sender.log", Message ).

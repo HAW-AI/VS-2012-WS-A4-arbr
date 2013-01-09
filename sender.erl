@@ -31,7 +31,7 @@ init([CoordinatorPID,Socket]) ->
 							 datasourcePID=DatasourcePID}}.
 
 terminate(StateName,StateData,State) ->
-	gen_server:cast(State#state.datasourcePid, stop),
+	gen_server:cast(State#state.datasourcePID, stop),
 	gen_udp:close(State#state.socket),
 	ok.
 

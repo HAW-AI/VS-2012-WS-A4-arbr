@@ -40,7 +40,7 @@ terminate(_Reason, State) ->
 %%TODO: Slot
 handle_cast({udp, _Socket, _IP, _Port, Packet}, State) ->
 	log("Paket angekommen"),
-	{_,Sec,_} = timestamp(),
+	{_,Sec,_} = now(),
 	Timestamp = Sec * 1000,
 	%50ms - Slotlänge
 	%1000ms - Framelänge

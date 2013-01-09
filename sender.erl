@@ -49,7 +49,7 @@ terminate( StateName, StateData, State) ->
 	gen_server:cast(State#state.datasource, stop),
 	gen_udp:close(State#state.socket),
 	ok.
-handle_event(stop, State) ->
+handle_event(stop, StateName, State) ->
   utility:log("Sender wird ausgeschaltet"),
   {stop, normal, State};
 

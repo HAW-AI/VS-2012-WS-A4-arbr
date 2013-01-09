@@ -58,9 +58,9 @@ terminate( _StateName, _StateData, State) ->
 	gen_udp:close(State#state.socket),
 	ok.
 
-handle_event(stop, StateName, State) ->
+handle_event(stop, _StateName, State) ->
   utility:log("Sender wird ausgeschaltet"),
-  {stop, normal, State};
+  {stop, normal, State}.
 
 %%
 %% non API Functions

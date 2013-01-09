@@ -20,6 +20,10 @@ start(RecPort,Station,MulticastIP)->
 init([RecPort,SendPort,Station,MulticastIP])->
 	{ok,DatasourcePID} = datasource:start(),
 	
+	%http://erldocs.com/R15B/kernel/gen_udp.html
+	%http://erldocs.com/R15B/kernel/inet.html#setopts/2
+	{ok,RecSocket} = gen_udp:open(RecPort,[binary,inet,{broadcast,true}]),
+	{ok,SendSocket} = gen_udp:open(SendPort,[binary,inet,{broadcast,true}]),
 	
 	{ok, #state{datasourcePID=DatasourcePID,
 				sendport=SendPort,

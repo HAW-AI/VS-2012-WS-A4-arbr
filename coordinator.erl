@@ -40,11 +40,20 @@ init([RecPort,SendPort,Station,MulticastIP,LocalIP])->
 	{ok,ReceiverPID} = receiver:start(self(),RecSocket),
 	{ok,SenderPID} = sender:start(self(),SendSocket,MulticastIP,RecPort),
 
+	next_frame(),
+
 	{ok, #state{datasourcePID=DatasourcePID,
 				receiverPID=ReceiverPID,
 				senderPID=SenderPID,
 				sendport=SendPort,
 				recport=RecPort}}.
+
+start_frame() ->
+	ok, % send wished or free slot to sender
+	next_frame().
+
+next_frame() ->
+	erlang:send_after(1000 - (util:timestamp() rem 1000), self(), start_frame).
 
 handle_cast({datasink, Data},State)->
 	log("Neue Nachricht empfangen: ~p",[Data]),

@@ -21,7 +21,7 @@ start( Coordinator, Socket, Address, Port )->
 
 init([ Coordinator, Socket, Address, Port ]) ->
   { ok, Datasource } = datasource:start(),
-  { ok, get_data, #state{ coordinator=Coordinator, socket=Socket, datasource=Datasource, address=Address, port=Port }}.
+  { ok, slot_received, #state{ coordinator=Coordinator, socket=Socket, datasource=Datasource, address=Address, port=Port }}.
 
 slot_received({ slot, Slot }, State) ->
   % fetch message from datasource
@@ -47,9 +47,6 @@ terminate( StateName, StateData, State) ->
 	gen_server:cast(State#state.datasource, stop),
 	gen_udp:close(State#state.socket),
 	ok.
-
-get_data({ slot, Slot }, State) ->
-	gen_server:cast(State#state.datasource, {get_data,self()}).
 
 %%
 %% non API Functions

@@ -66,6 +66,7 @@ handle_cast({datasink, Data},State)->
 	{noreply, State};
 
 handle_cast({nextSlot, SenderPID}, State)->
+	log("Der Sender hat nach dem nächsten Slot gefragt"),
 	ok;
 
 %TODO: Slotberechnung

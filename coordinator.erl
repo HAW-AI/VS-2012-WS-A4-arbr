@@ -64,14 +64,14 @@ handle_cast({datasink, Data},State)->
 
 %TODO: Slotberechnung
 handle_cast({recieved, RecievedTimestamp, Packet}, State)->
-	{_, StationNumber, _, SlotWish, Timestamp} = parse_packet(Packet),
+	{ Station, StationNumber, Data, SlotWish, Timestamp} = parse_packet(Packet),
 	Slot = util:slot_from(Timestamp), % or from RecievedTimestamp?
 
 	case slot_collision(Slot, State#state.used_slots) of
 		true ->
 			log("Collision!") % by dict:fetch(Slot, State#state.used_slots)
 	end,
-	UsedSlots = dict:append(Slot, StationNumber, State#state.used_slots),
+	UsedSlots = dict:append(Slot, { Station, StationNumber, Data }, State#state.used_slots),
 	WishedSlots = dict:append(SlotWish, StationNumber, State#state.wished_slots),
 	{noreply, State#state{ used_slots=UsedSlots, wished_slots=WishedSlots }}.
 

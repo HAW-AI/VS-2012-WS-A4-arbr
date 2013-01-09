@@ -1,12 +1,6 @@
 -module(sender).
 -author("Ben Rexin <benjamin.rexin@haw-hamburg.de>").
--compile([export_all]).
 
-% tasks
-% - waiting for slot
-% - waiting for message
-% - deliver message
--behaviour(gen_fsm).
 %%
 %% Include files
 %%
@@ -14,48 +8,56 @@
 %%
 %% Exported Functions
 %%
-%% gen_fsm erwartet bestimmte exports, export_all reicht nicht aus
+%% gen_fsm requires explicit export of his required functions
 -export([init/1, handle_sync_event/4, handle_info/3, code_change/4, terminate/3]).
 
--record(state,{coordinatorPID,socket,datasourcePID}).
+-behaviour(gen_fsm).
+-record( state, { coordinator, socket, datasource }).
 %%
 %% API Functions
 %%
-start(CoordinatorPID,Socket)->
-	gen_fsm:start(?MODULE,[CoordinatorPID,Socket],[]).
+start(Coordinator,Socket)->
+  gen_fsm:start( ?MODULE, [ Coordinator, Socket ], [] ).
 
-init([CoordinatorPID,Socket]) ->
-	{ok, DatasourcePID} = datasource:start(),
-	{ok,get_data,#state{coordinatorPID = CoordinatorPID,
-							 socket=Socket,
-							 datasourcePID=DatasourcePID}}.
+init([ Coordinator, Socket ]) ->
+  { ok, Datasource } = datasource:start(),
+  { ok, get_data, #state{coordinator = Coordinator, socket=Socket, datasource=Datasource }}.
 
-terminate(StateName,StateData,State) ->
-	gen_server:cast(State#state.datasourcePID, stop),
+slot_received({ slot, Slot }, State) ->
+  % fetch message from datasource
+  ok.
+
+message_received({ message, Message }, State) ->
+  % fetch next slot from coordinator
+  ok.
+
+next_slot_received({ nextSlot, Slot }, State) ->
+  % deliver message, and wait for next frame
+  ok.
+
+terminate( StateName, StateData, State) ->
+	gen_server:cast(State#state.datasource, stop),
 	gen_udp:close(State#state.socket),
 	ok.
 
-get_data({slot,Slot},State) ->
-	gen_server:cast(State#state.datasourcePID, {get_data,self()}).
-	
-	
-
+get_data({ slot, Slot }, State) ->
+	gen_server:cast(State#state.datasource, {get_data,self()}).
 
 %%
-%% Local Functions
+%% non API Functions
 %%
 log(Message) ->
-	util:log("Datasource.log",Message).
+	util:log( "Datasource.log", Message ).
 
-%%durch gen_fsm vorgegeben
-state_name(_Event, _From, State) ->
+%% gen_fsm API requirements
+state_name( _Event, _From, State ) ->
   {reply, ok, state_name, State}.
 
-handle_sync_event(_Event, _From, StateName, State) ->
+handle_sync_event( _Event, _From, StateName, State ) ->
   {reply, ok, StateName, State}.
 
-handle_info(_Info, StateName, State) ->
+handle_info( _Info, StateName, State ) ->
   {noreply, StateName, State}.
 
-code_change(_OldVsn, StateName, State, _Extra) ->
+code_change( _OldVsn, StateName, State, _Extra ) ->
   {ok, StateName, State}.

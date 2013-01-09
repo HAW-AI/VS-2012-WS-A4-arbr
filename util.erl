@@ -5,9 +5,9 @@
 
 log(File, Message) -> log(File, Message, []).
 log(File, Message, Data) ->
-  logging(File, io_lib:format("[~s] (~p) "++Message++"~n",[timestamp(),self()]++Data)).
+  logging(File, io_lib:format("[~s] (~p) "++Message++"~n",[timestamp_log(),self()]++Data)).
 
-timestamp() ->
+timestamp_log() ->
   {Year, Month, Day} = date(),
   {Hour, Minute, Second} = time(),
   lists:flatten(
@@ -17,3 +17,7 @@ timestamp() ->
 millisec() ->
   {_, _, MicroSec} = now(),
   string:substr( float_to_list(MicroSec/ 1000000), 3, 3).
+
+timestamp() ->
+  {MegaSecs, Secs, MicroSecs} = now(), % would erlang:timestamp() also work? i'm unsure
+  (MegaSecs * math:pow(10,9)) * (Secs * math:pow(10,3)) * (MicroSecs div 1000).

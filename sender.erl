@@ -54,7 +54,15 @@ terminate( StateName, StateData, State) ->
 %% non API Functions
 %%
 build_packet(Message, Slot) ->
-  ok.
+  Timestamp = timestamp(),
+  Data = list_to_binary(Message)
+  % Bit Syntax Expressions (Value:Size/TypeSpecifierList) http://www.erlang.org/doc/reference_manual/expressions.html
+  << Data:24/binary,
+     Slot:8/integer-big,
+     Timestamp:64/integer-big>>.
+
+timestamp() ->
+  {MegaSecs, Secs, MicroSecs} = now().
 
 log(Message) ->
 	util:log( "Datasource.log", Message ).

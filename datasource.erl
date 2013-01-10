@@ -7,12 +7,12 @@
 %%
 %% Include files
 %%
--import(util, [log/2]).
+
 %%
 %% Exported Functions
 %%
 
-%% callbacks für gen_server
+%% callbacks fï¿½r gen_server
 -export([init/1,
          handle_call/3,
          handle_cast/2,
@@ -31,30 +31,30 @@ start() ->
 	gen_server:start(?MODULE,[],[]).
 
 init(_Args) ->
-	PollPID = spawn(fun() -> poll(self()) end),
+	MyPid = self(),
+	PollPID = spawn(fun() -> poll(MyPid) end),
 	register(dq, self()),
 	{ok, #state{pollPID=PollPID}}.
 
 poll(DatasourcePID) ->
-	log("hm"),
 	case io:get_chars("", 24) of
 		eof ->
 			log("EOF erreicht"),
 			exit(normal);
 		Value -> 
-			log("blub"),
+			log("Value:,~p",[Value]),
 			gen_server:cast(DatasourcePID, {newvalue,Value}),
 			poll(DatasourcePID)
 	end.
 
 handle_cast({newvalue, Value}, State) ->
-	log("Neue Nachricht aus der Java-Datenquelle: "++Value),
+	%%log("Neue Nachricht aus der Java-Datenquelle: [~p]",[Value]),
 	{noreply, State#state{value=Value}};
 
 handle_cast({get_next_value, SenderPID}, State) ->
-	log("Der Sender hat die nächste Nachricht angefordert"),
+	log("Der Sender hat die nï¿½chste Nachricht angefordert"),
 	%% sender wird als final state machine implementiert
-	log("Nächste Nachricht ist: ~p",[State#state.value]),
+	log("Nï¿½chste Nachricht ist: ~p",[State#state.value]),
 	gen_fsm:send_event(SenderPID, {message, State#state.value}),
 	{noreply, State#state{value=""}};
 
@@ -86,3 +86,5 @@ code_change(_OldVsn, State, _Extra) ->
 
 log(Message) ->
 	util:log("Datasource.log",Message).
+log(Message, Data) ->
+	util:log("Datasource.log",Message, Data).

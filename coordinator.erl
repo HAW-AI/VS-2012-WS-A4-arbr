@@ -19,9 +19,7 @@
 start(RecPort,Station,MulticastIP,LocalIP)->
 	gen_server:start(?MODULE,[RecPort,?SENDPORT,Station,MulticastIP,LocalIP],[]).
 
-init([RecPort,SendPort,Station,MulticastIP,LocalIP])->
-	
-
+init([RecPort,SendPort,_Station,MulticastIP,LocalIP])->
 	%http://erldocs.com/R15B/kernel/gen_udp.html
 	%http://erldocs.com/R15B/kernel/inet.html#setopts/2
 	%http://stackoverflow.com/questions/78826/erlang-multicast
@@ -58,8 +56,8 @@ next_frame_timer() ->
 
 handle_cast(frame_start, State) ->
 	% send all non collided messages to sink (ugly hack!)
-	CollisionFreeMessages = dict:filter(fun(Key, Value) -> lists:length(Value) == 1 end, State#state.used_slots),
-	dict:fold(fun(Key, Value, Accu) -> gen_server:cast(self(),{ datasink, Value }) end, ok, CollisionFreeMessages),
+	CollisionFreeMessages = dict:filter(fun(_Key, Value) -> lists:length(Value) == 1 end, State#state.used_slots),
+	dict:fold(fun(_Key, Value, _Accu) -> gen_server:cast(self(),{ datasink, Value }) end, ok, CollisionFreeMessages),
 	% send wished or free slot to sender
 	NextSlot = calculate_next_slot(State),
 	gen_server:cast(State#state.senderPID, { nextSlot, NextSlot }),
@@ -76,7 +74,7 @@ handle_cast({nextSlot, SenderPID}, State)->
 	gen_server:cast(SenderPID, { nextSlot, NextSlot }),
 	{noreply, State#state{ next_slot=NextSlot }};
 
-handle_cast({recieved, RecievedTimestamp, Packet}, State)->
+handle_cast({recieved, _RecievedTimestamp, Packet}, State)->
 	{ Station, StationNumber, Data, SlotWish, Timestamp} = parse_packet(Packet),
 	Slot = util:slot_from(Timestamp), % or from RecievedTimestamp?
 

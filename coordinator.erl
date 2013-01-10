@@ -62,7 +62,7 @@ handle_cast(frame_start, State) ->
 	dict:fold(fun(Key, Value, Accu) -> gen_server:cast(self(),{ datasink, Value }) end, ok, CollisionFreeMessages),
 	% send wished or free slot to sender
 	NextSlot = calculate_next_slot(State),
-	gen_server:cast(SenderPID,{nextSlot,NextSlot}),
+	gen_server:cast(State#state.senderPID, { nextSlot, NextSlot }),
 	next_frame_timer(),
 	{noreply, State#state{ used_slots=dict:new(), wished_slots=dict:new() }};
 
@@ -75,15 +75,6 @@ handle_cast({nextSlot, SenderPID}, State)->
 	NextSlot = calculate_next_slot(State),
 	{noreply, State#state{ next_slot=NextSlot }};
 
-calculate_next_slot(State) ->
-	if
-		lists:size(dict:fetch(State#state.next_slot, State#state.wished_slots)) < 2 ->
-			State#state.next_slot;
-		true ->
-			[ Slot | _ ] = werkzeug:shuffle(substract(lists:seq(0,19), dict:fetch_keys(State#state.used_slots))),
-			Slot
-	end.
-
 handle_cast({recieved, RecievedTimestamp, Packet}, State)->
 	{ Station, StationNumber, Data, SlotWish, Timestamp} = parse_packet(Packet),
 	Slot = util:slot_from(Timestamp), % or from RecievedTimestamp?
@@ -95,6 +86,16 @@ handle_cast({recieved, RecievedTimestamp, Packet}, State)->
 	UsedSlots = dict:append(Slot, lists:faltten([ Station, StationNumber, Data ]), State#state.used_slots),
 	WishedSlots = dict:append(SlotWish, StationNumber, State#state.wished_slots),
 	{noreply, State#state{ used_slots=UsedSlots, wished_slots=WishedSlots }}.
+
+calculate_next_slot(State) ->
+	Count = lists:size(dict:fetch(State#state.next_slot, State#state.wished_slots)),
+	if
+		Count < 2 ->
+			State#state.next_slot;
+		true ->
+			[ Slot | _ ] = werkzeug:shuffle(lists:substract(lists:seq(0,19), dict:fetch_keys(State#state.used_slots))),
+			Slot
+	end.
 
 slot_collision(Slot, UsedSlots) ->
 	dict:is_key(Slot, UsedSlots).

@@ -92,7 +92,8 @@ calculate_next_slot(State) ->
 		Count < 2 ->
 			State#state.next_slot;
 		true ->
-			[ Slot | _ ] = werkzeug:shuffle(lists:substract(lists:seq(0,19), dict:fetch_keys(State#state.used_slots))),
+			UsedSlots = lists:map(fun(Value) -> string:to_integer(Value) end, dict:fetch_keys(State#state.used_slots)),
+			[ Slot | _ ] = werkzeug:shuffle(lists:substract(lists:seq(0,19), UsedSlots)),
 			Slot
 	end.
 

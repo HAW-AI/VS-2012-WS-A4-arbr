@@ -43,12 +43,15 @@ init([RecPort,SendPort,Station,MulticastIP,LocalIP])->
 	{ok,SenderPID} = sender:start(self(),SendSocket,MulticastIP,RecPort),
 
 	next_frame_timer(),
+	[ NextSlot | _ ] = werkzeug:shuffle(lists:seq(0,19)),
 
 	{ok, #state{
 				receiverPID=ReceiverPID,
 				senderPID=SenderPID,
 				sendport=SendPort,
-				recport=RecPort}}.
+				recport=RecPort
+				next_slot=NextSlot
+				}}.
 
 next_frame_timer() ->
 	erlang:send_after(1000 - (util:timestamp() rem 1000), self(), frame_start).

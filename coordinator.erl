@@ -73,6 +73,7 @@ handle_cast({datasink, Data},State)->
 handle_cast({nextSlot, SenderPID}, State)->
 	log("Der Sender hat nach dem nächsten Slot gefragt"),
 	NextSlot = calculate_next_slot(State),
+	gen_server:cast(SenderPID, { nextSlot, NextSlot }),
 	{noreply, State#state{ next_slot=NextSlot }};
 
 handle_cast({recieved, RecievedTimestamp, Packet}, State)->

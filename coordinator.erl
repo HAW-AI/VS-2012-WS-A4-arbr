@@ -67,13 +67,18 @@ handle_cast({datasink, Data},State)->
 
 handle_cast({nextSlot, SenderPID}, State)->
 	log("Der Sender hat nach dem nächsten Slot gefragt"),
-	NextSlot = calculate_next_slot(),
-	% werkzeug:shuffle(substract(lists:seq(0,19), dict:fetch_keys(State#state.used_slots))),
+	NextSlot = calculate_next_slot(State),
 	{noreply, State#state{ next_slot=NextSlot }};
 
-calculate_next_slot() -> 0.
+calculate_next_slot(State) ->
+	if
+		lists:size(dict:fetch(State#state.next_slot, State#state.wished_slots)) < 2 ->
+			State#state.next_slot;
+		true ->
+			[ Slot | _ ] = werkzeug:shuffle(substract(lists:seq(0,19), dict:fetch_keys(State#state.used_slots))),
+			Slot
+	end.
 
-%TODO: Slotberechnung
 handle_cast({recieved, RecievedTimestamp, Packet}, State)->
 	{ Station, StationNumber, Data, SlotWish, Timestamp} = parse_packet(Packet),
 	Slot = util:slot_from(Timestamp), % or from RecievedTimestamp?

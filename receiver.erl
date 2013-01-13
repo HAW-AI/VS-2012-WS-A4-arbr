@@ -21,18 +21,18 @@
 
 -compile([export_all]).
 
--record(state, {coordinatorPID, socket}).
+-record(state, {coordinatorPID, socket,station}).
 
 %%
 %% API Functions
 %%
-start(CoordinatorPID,Socket) ->
-	log("Receiver start"),
-	gen_server:start({global,rec},?MODULE,[CoordinatorPID, Socket],[]).
+start(CoordinatorPID,Socket,Station) ->
+	log("[~p]Receiver start",[Station]),
+	gen_server:start({global,rec},?MODULE,[CoordinatorPID, Socket,Station],[]).
 
-init([CoordinatorPID,Socket]) ->
-	log("Receiver init"),
-	{ok, #state{coordinatorPID=CoordinatorPID, socket=Socket}}.
+init([CoordinatorPID,Socket,Station]) ->
+	log("[~p]Receiver init",[Station]),
+	{ok, #state{coordinatorPID=CoordinatorPID, socket=Socket, station=Station}}.
 
 terminate(normal, State) ->
 	log("TERMINATING!"),
@@ -40,7 +40,7 @@ terminate(normal, State) ->
 	log("Receiver wurde beendet").
 
 handle_info({udp, _Socket, _IP, _Port, Packet}, State) ->
-	log("Paket angekommen"),
+	log("[~p]Paket angekommen",[State#state.station]),
 	Timestamp = util:timestamp(),
 	gen_server:cast(State#state.coordinatorPID,{recieved, Timestamp, Packet}),
 	{noreply, State};

@@ -65,6 +65,7 @@ next_slot_received({ nextSlot, Slot }, State) ->
       gen_udp:send(Socket, Address, Port, Packet),
       log("Nachricht gesendet");
     false ->
+      log("TimeLeft<=0"),
       ok % missed slot, should not send to prevent collision. Drop message?
   end,
   { next_state, slot_received, State };

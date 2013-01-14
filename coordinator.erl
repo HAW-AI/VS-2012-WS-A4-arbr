@@ -117,7 +117,10 @@ handle_cast({recieved, _RecievedTimestamp, Packet}, State)->
 	end,
 	UsedSlots = dict:append(Slot, { Station, StationNumber, Data }, State#state.used_slots),
 	WishedSlots = dict:append(SlotWish, StationNumber, State#state.wished_slots),
-	{noreply, State#state{ used_slots=UsedSlots, wished_slots=WishedSlots }}.
+	{noreply, State#state{ used_slots=UsedSlots, wished_slots=WishedSlots }};
+handle_cast(Any, State)->
+	log("Unknown message received: [~p]",[Any]),
+	{noreply,State}.
 
 calculate_next_slot(State) ->
 	log("[~p]NextSlot [~p] NextSlotTaken? [~p]",[State#state.station,State#state.next_slot, dict:is_key(State#state.next_slot, State#state.wished_slots)]),

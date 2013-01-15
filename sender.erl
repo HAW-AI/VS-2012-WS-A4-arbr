@@ -12,7 +12,7 @@
 %% Exported Functions
 %%
 %% gen_fsm requires explicit export of his required functions
--export([init/1, handle_sync_event/4, handle_info/3, code_change/4, terminate/3, handle_event/3]).
+-export([init/1, handle_sync_event/4, handle_info/3, code_change/4, terminate/3, handle_event/3, deliver/2]).
 -compile([export_all]).
 -behaviour(gen_fsm).
 -record( state, { coordinator, socket, datasource, address, port, message, slot=0, next_slot=0 }).
@@ -58,7 +58,7 @@ next_slot_received({ nextSlot, Slot }, State) ->
     true ->
 %      timer:sleep(TimeLeft),
       gen_fsm:send_event_after(TimeLeft, deliver),
-      { next_state, slot_received, State#state{next_slot=Slot} };
+      { next_state, deliver, State#state{next_slot=Slot} };
     false ->
       log("TimeLeft<=0"),
       { next_state, slot_received, State }
@@ -67,14 +67,15 @@ next_slot_received(Unknown, State) ->
   log("[UNKNOWN] next_slot_received received message [~p]",[Unknown]),
   { next_state, next_slot_received, State}.
 
-handle_event(deliver, _AnyState, State) ->
+deliver(deliver, State) ->
       Socket = State#state.socket,
       Address = State#state.address,
       Port = State#state.port,
       Message = State#state.message,
       Packet = build_packet(Message, State#state.next_slot),
       gen_udp:send(Socket, Address, Port, Packet),
-      log("Nachricht gesendet");
+      log("Nachricht gesendet"),
+      { next_state, slot_received, State }.
 
 handle_event(stop, _StateName, State) ->
   utility:log("Sender wird ausgeschaltet"),

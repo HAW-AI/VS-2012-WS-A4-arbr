@@ -15,7 +15,7 @@
 -export([init/1, handle_sync_event/4, handle_info/3, code_change/4, terminate/3, handle_event/3]).
 -compile([export_all]).
 -behaviour(gen_fsm).
--record( state, { coordinator, socket, datasource, address, port, message, slot=0 }).
+-record( state, { coordinator, socket, datasource, address, port, message, slot=0, next_slot=0 }).
 %%
 %% API Functions
 %%
@@ -56,32 +56,35 @@ next_slot_received({ nextSlot, Slot }, State) ->
   TimeLeft = time_till_slot(State#state.slot),
   case TimeLeft > 0 of
     true ->
-      timer:sleep(TimeLeft),
+%      timer:sleep(TimeLeft),
+      gen_fsm:send_event_after(TimeLeft, deliver),
+      { next_state, slot_received, State#state{next_slot=Slot} };
+    false ->
+      log("TimeLeft<=0"),
+      { next_state, slot_received, State }
+  end;
+next_slot_received(Unknown, State) ->
+  log("[UNKNOWN] next_slot_received received message [~p]",[Unknown]),
+  { next_state, next_slot_received, State}.
+
+handle_event(deliver, _AnyState, State) ->
       Socket = State#state.socket,
       Address = State#state.address,
       Port = State#state.port,
       Message = State#state.message,
-      Packet = build_packet(Message, Slot),
+      Packet = build_packet(Message, State#state.next_slot),
       gen_udp:send(Socket, Address, Port, Packet),
       log("Nachricht gesendet");
-    false ->
-      log("TimeLeft<=0"),
-      ok % missed slot, should not send to prevent collision. Drop message?
-  end,
-  { next_state, slot_received, State };
-next_slot_received(Unknown, State) ->
-  log("[UNKNOWN] next_slot_received received message [~p]",[Unknown]),
-  { next_state, next_slot_received, State}.
+
+handle_event(stop, _StateName, State) ->
+  utility:log("Sender wird ausgeschaltet"),
+  {stop, normal, State}.
 
 terminate( _StateName, _StateData, State) ->
 	log("TERMINATING!"),
 	gen_server:cast(State#state.datasource, stop),
 	gen_udp:close(State#state.socket),
 	ok.
-
-handle_event(stop, _StateName, State) ->
-  utility:log("Sender wird ausgeschaltet"),
-  {stop, normal, State}.
 
 %%
 %% non API Functions

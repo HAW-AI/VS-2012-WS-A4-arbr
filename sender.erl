@@ -15,41 +15,41 @@
 -export([init/1, handle_sync_event/4, handle_info/3, code_change/4, terminate/3, handle_event/3, deliver/2]).
 -compile([export_all]).
 -behaviour(gen_fsm).
--record( state, { coordinator, socket, datasource, address, port, message, slot=0, next_slot=0 }).
+-record( state, { coordinator, socket, datasource, address, port, message, slot=0, next_slot=0, station}).
 %%
 %% API Functions
 %%
-start( Coordinator, Socket, Address, Port )->
+start( Coordinator, Socket, Address, Port, Station )->
   log("Starter: gestartet"),
-  gen_fsm:start( ?MODULE, [ Coordinator, Socket, Address, Port ], [] ).
+  gen_fsm:start( ?MODULE, [ Coordinator, Socket, Address, Port, Station ], [] ).
 
-init([ Coordinator, Socket, Address, Port ]) ->
+init([ Coordinator, Socket, Address, Port, Station ]) ->
   log("Sender: init"),
   { ok, Datasource } = datasource:start(),
-  { ok, slot_received, #state{ coordinator=Coordinator, socket=Socket, datasource=Datasource, address=Address, port=Port }}.
+  { ok, slot_received, #state{ coordinator=Coordinator, socket=Socket, datasource=Datasource, address=Address, port=Port, station=Station }}.
 
 % fetch message from datasource
 slot_received({ slot, Slot }, State) ->
-  log("Slot received"),
+  log("[~p]Slot received: [~p]",[State#state.station, Slot]),
   gen_server:cast( State#state.datasource, { get_next_value, self() }),
-  log("Nach get_next_value"),
+  log("[~p]Nach get_next_value",[State#state.station]),
   { next_state, message_received, State#state{ slot=Slot } };
 slot_received(Unknown, State) ->
-  log("[UNKNOWN] slot_received received message [~p]",[Unknown]),
+  log("[[~p]UNKNOWN] slot_received received message [~p]",[State#state.station,Unknown]),
   { next_state, slot_received, State}.
 
 message_received({ message, Message }, State) ->
-  log("message received"),
+  log("[~p]message received",[State#state.station]),
   % fetch next slot from coordinator
   gen_server:cast(State#state.coordinator, { nextSlot, self() }),
-  log("received Message [~p]", [Message]),
+  log("[[~p]received Message [~p]", [State#state.station,Message]),
   { next_state, next_slot_received, State#state{ message=Message} };
 message_received(Unknown, State) ->
-  log("[UNKNOWN] message_received received message [~p]",[Unknown]),
+  log("[[~p]UNKNOWN] message_received received message [~p]",[State#state.station,Unknown]),
   { next_state, message_received, State}.
 
 next_slot_received({ nextSlot, Slot }, State) ->
-  log("next slot received"),
+  log("[~p]next slot received: [~p]",[State#state.station, Slot]),
   % if slot not passed
   % deliver message, and wait for next frame
   % else ?
@@ -60,11 +60,11 @@ next_slot_received({ nextSlot, Slot }, State) ->
       gen_fsm:send_event_after(TimeLeft, deliver),
       { next_state, deliver, State#state{next_slot=Slot} };
     false ->
-      log("TimeLeft<=0"),
+      log("[~p]TimeLeft<=0",[State#state.station]),
       { next_state, slot_received, State }
   end;
 next_slot_received(Unknown, State) ->
-  log("[UNKNOWN] next_slot_received received message [~p]",[Unknown]),
+  log("[[~p]UNKNOWN] next_slot_received received message [~p]",[State#state.station,Unknown]),
   { next_state, next_slot_received, State}.
 
 deliver(deliver, State) ->
@@ -74,15 +74,15 @@ deliver(deliver, State) ->
       Message = State#state.message,
       Packet = build_packet(Message, State#state.next_slot),
       gen_udp:send(Socket, Address, Port, Packet),
-      log("Nachricht gesendet"),
+      log("[~p]Nachricht gesendet",[State#state.station]),
       { next_state, slot_received, State }.
 
 handle_event(stop, _StateName, State) ->
-  utility:log("Sender wird ausgeschaltet"),
+  utility:log("[~p]Sender wird ausgeschaltet",[State#state.station]),
   {stop, normal, State}.
 
 terminate( _StateName, _StateData, State) ->
-	log("TERMINATING!"),
+	log("[~p]TERMINATING!",[State#state.station]),
 	gen_server:cast(State#state.datasource, stop),
 	gen_udp:close(State#state.socket),
 	ok.

@@ -55,7 +55,7 @@ init([StringRecPort,SendPort,Station,StringMulticastIP,StringLocalIP])->
 
 	{ok,ReceiverPID} = receiver:start(self(),RecSocket,Station),
 	log("[~p]Coordinator: Receiver gestartet",[Station]),
-	{ok,SenderPID} = sender:start(self(),SendSocket,MulticastIP,RecPort),
+	{ok,SenderPID} = sender:start(self(),SendSocket,MulticastIP,RecPort,Station),
 
 	gen_udp:controlling_process(RecSocket, ReceiverPID),
 	gen_udp:controlling_process(SendSocket, SenderPID),
@@ -137,7 +137,8 @@ calculate_next_slot(State) ->
 		true ->
 			CollisionFreeUsedSlots = dict:filter(fun(_Key, Value) -> length(Value) == 1 end, State#state.wished_slots),
 			UsedSlots = dict:fetch_keys(CollisionFreeUsedSlots),
-			FreeSlots = werkzeug:shuffle(lists:subtract(lists:seq(0,19), UsedSlots)),
+			%FreeSlots = werkzeug:shuffle(lists:subtract(lists:seq(0,19), UsedSlots)),
+			FreeSlots = lists:subtract(lists:seq(0,19), UsedSlots),
 			log("[~p] used slots [~p]",[State#state.station,UsedSlots]),
 			log("[~p] free slots [~p]",[State#state.station,FreeSlots]),
 			if 
@@ -145,7 +146,8 @@ calculate_next_slot(State) ->
 					log("KANNNICHTSEIN"), 
 					0; % ugly fallback, no free slot found!
 				true -> 
-					[ TempSlot | _ ] = FreeSlots,
+					%[ TempSlot | _ ] = FreeSlots,
+					TempSlot = lists:nth(radnom:uniform(length(FreeSlots)),FreeSlots),
 					TempSlot
 			end
 	end,

@@ -61,7 +61,7 @@ init([StringRecPort,SendPort,Station,StringMulticastIP,StringLocalIP])->
 	gen_udp:controlling_process(SendSocket, SenderPID),
 	
 	log("[~p]Coordinator - alle Sockets geöffnet, und sender/receiver gestartet",[Station]),
-	next_frame_timer(),
+	next_frame_timer(Station),
 	random:seed(now()),
 	NextSlot = random:uniform(20) -1,
 
@@ -74,11 +74,11 @@ init([StringRecPort,SendPort,Station,StringMulticastIP,StringLocalIP])->
 				station=Station
 				}}.
 
-next_frame_timer() ->
-	log("Next frame timer"),
-	log("Timestamp: [~p]",[util:timestamp()]),
-	log("Millisec: [~p]",[(util:timestamp() rem 1000)]),
-	log("Timediff: [~p]",[1000 - (util:timestamp() rem 1000)]),
+next_frame_timer(Station) ->
+	log("[~p]Next frame timer",[Station]),
+	log("[~p]Timestamp: [~p]",[Station,util:timestamp()]),
+	log("[~p]Millisec: [~p]",[Station,(util:timestamp() rem 1000)]),
+	log("[~p]Timediff: [~p]",[Station,1000 - (util:timestamp() rem 1000)]),
 	erlang:send_after(1000 - (util:timestamp() rem 1000), self(), frame_start).
 
 handle_cast(frame_start, State) ->
@@ -90,7 +90,7 @@ handle_cast(frame_start, State) ->
 	Slot = calculate_next_slot(State),
 	log("[~p]Sending nextslot",[State#state.station]),
 	gen_fsm:send_event(State#state.senderPID, { slot, Slot }),
-	next_frame_timer(),
+	next_frame_timer(State#state.station),
 	{noreply, State#state{ used_slots=dict:new(), wished_slots=dict:new()}};
 
 handle_cast({datasink, Data},State)->

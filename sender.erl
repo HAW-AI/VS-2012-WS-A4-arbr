@@ -53,7 +53,7 @@ next_slot_received({ nextSlot, Slot }, State) ->
   % if slot not passed
   % deliver message, and wait for next frame
   % else ?
-  TimeLeft = time_till_slot(State#state.slot),
+  TimeLeft = time_till_slot(State#state.slot)+20,
   case TimeLeft > 0 of
     true ->
 %      timer:sleep(TimeLeft),

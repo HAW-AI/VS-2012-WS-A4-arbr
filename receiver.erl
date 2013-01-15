@@ -28,7 +28,7 @@
 %%
 start(CoordinatorPID,Socket,Station) ->
 	log("[~p]Receiver start",[Station]),
-	gen_server:start({global,rec},?MODULE,[CoordinatorPID, Socket,Station],[]).
+	gen_server:start(?MODULE,[CoordinatorPID, Socket,Station],[]).
 
 init([CoordinatorPID,Socket,Station]) ->
 	log("[~p]Receiver init",[Station]),

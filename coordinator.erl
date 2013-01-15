@@ -82,7 +82,7 @@ next_frame_timer(Station) ->
 	erlang:send_after(1000 - (util:timestamp() rem 1000), self(), frame_start).
 
 handle_cast(frame_start, State) ->
-	log("=========================Coordinator: start frame=================================="),
+	log("[~p]=========================Coordinator: start frame==================================",[State#state.station]),
 	% send all non collided messages to sink (ugly hack!)
 	CollisionFreeMessages = dict:filter(fun(_Key, Value) -> length(Value) == 1 end, State#state.used_slots),
 	dict:fold(fun(_Key, Value, _Accu) -> gen_server:cast(self(),{ datasink, Value }) end, ok, CollisionFreeMessages),
@@ -141,13 +141,19 @@ calculate_next_slot(State) ->
 			FreeSlots = lists:subtract(lists:seq(0,19), UsedSlots),
 			log("[~p] used slots [~p]",[State#state.station,UsedSlots]),
 			log("[~p] free slots [~p]",[State#state.station,FreeSlots]),
+			log("[~p] free slots length [~p]",[State#state.station,length(FreeSlots)]),
 			if 
 				length(FreeSlots) == 0 ->
 					log("KANNNICHTSEIN"), 
 					0; % ugly fallback, no free slot found!
 				true -> 
 					%[ TempSlot | _ ] = FreeSlots,
-					TempSlot = lists:nth(radnom:uniform(length(FreeSlots)),FreeSlots),
+					FreeSlotsLength = length(FreeSlots),
+					log("[~p]true, length: [~p], is_number: [~p]",[State#state.station,FreeSlotsLength, is_integer(FreeSlotsLength)]),
+					%log("[~p] random",[State#state.station,radnom:uniform(length(FreeSlots))]),
+					RandomElementIndex = random:uniform(FreeSlotsLength),
+					log("[~p] random(length(FreeSlots)): [~p]",[State#state.station,RandomElementIndex]),
+					TempSlot = lists:nth(RandomElementIndex,FreeSlots),
 					TempSlot
 			end
 	end,
@@ -182,7 +188,7 @@ handle_call(_Request, _From, State) ->
   {reply, ok, State}.
 
 handle_info(frame_start, State) ->
-  log("Got frame_start"),
+  log("[~p]Got frame_start",[State#state.station]),
   gen_server:cast(self(), frame_start),
   {noreply, State};
 

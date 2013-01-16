@@ -97,13 +97,6 @@ handle_cast({datasink, Data},State)->
 	%log("[~p]Neue Nachricht empfangen: ~p",[State#state.station,Data]),
 	{noreply, State};
 
-handle_cast({nextSlot, SenderPID}, State)->
-	%log("[~p]Der Sender hat nach dem n�chsten Slot gefragt",[State#state.station]),
-	NextSlot = calculate_next_slot(State),
-	%log("[~p]Next Slot: [~p]",[State#state.station,NextSlot]),
-	gen_fsm:send_event(SenderPID, { nextSlot, NextSlot }),
-	{noreply, State#state{ next_slot=NextSlot }};
-
 handle_cast({recieved, _RecievedTimestamp, Packet}, State)->
 	%log("[~p]Coordinator recieved",[State#state.station]),
 	{ Station, StationNumber, Data, SlotWish, Timestamp} = parse_packet(Packet),

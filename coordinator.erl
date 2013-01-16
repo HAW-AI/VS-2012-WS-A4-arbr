@@ -24,7 +24,7 @@ init([StringRecPort,SendPort,Station,StringMulticastIP,StringLocalIP])->
 	%http://erldocs.com/R15B/kernel/gen_udp.html
 	%http://erldocs.com/R15B/kernel/inet.html#setopts/2
 	%http://stackoverflow.com/questions/78826/erlang-multicast
-	
+
 	RecPort = list_to_integer(atom_to_list(StringRecPort)),
 	{ ok, MulticastIP } = inet_parse:address(atom_to_list(StringMulticastIP)),
 	{ ok, LocalIP } = inet_parse:address(atom_to_list(StringLocalIP)),
@@ -34,7 +34,7 @@ init([StringRecPort,SendPort,Station,StringMulticastIP,StringLocalIP])->
 	%log("[~p]LocalIP: ~p",[Station,LocalIP]),
 	{ok,RecSocket} = gen_udp:open(RecPort,[
 										   binary,
-										   inet, 
+										   inet,
 										   {active, true},
 										   {reuseaddr, true},
 										   {multicast_loop, true},
@@ -43,7 +43,7 @@ init([StringRecPort,SendPort,Station,StringMulticastIP,StringLocalIP])->
 								 ),
 	%log("[~p]Coordinator RecSocket geöffnet",[Station]),
 	{ok,SendSocket} = gen_udp:open(SendPort,[
-											 binary, 
+											 binary,
 											 inet,
 											 {active, true},
 											 {reuseaddr, true},
@@ -59,7 +59,7 @@ init([StringRecPort,SendPort,Station,StringMulticastIP,StringLocalIP])->
 
 	gen_udp:controlling_process(RecSocket, ReceiverPID),
 	gen_udp:controlling_process(SendSocket, SenderPID),
-	
+
 	%log("[~p]Coordinator - alle Sockets geöffnet, und sender/receiver gestartet",[Station]),
 	next_frame_timer(Station),
 	random:seed(now()),
@@ -112,7 +112,7 @@ handle_cast({recieved, _RecievedTimestamp, Packet}, State)->
 	case slot_collision(Slot, State#state.used_slots) of
 		true ->
 			ok;%log("[~p]Collision!",[State#state.station]); % by dict:fetch(Slot, State#state.used_slots)
-		false -> 
+		false ->
 			ok
 	end,
 	WishedSlots = dict:append(SlotWish, StationNumber, State#state.wished_slots),
@@ -123,43 +123,32 @@ handle_cast(Any, State)->
 	{noreply,State}.
 
 calculate_next_slot(State) ->
-	%log("[~p]NextSlot [~p] NextSlotTaken? [~p]",[State#state.station,State#state.next_slot, dict:is_key(State#state.next_slot, State#state.wished_slots)]),
-	Count = case dict:is_key(State#state.next_slot, State#state.wished_slots) of
+	case slot_wished_by_more_than_two(State#state.next_slot, State#state.wished_slots) of
+		% collision in wishlist, find alternative.
 		true ->
-			%log("[~p]Wished Slots by Stations [~p]", [State#state.station,dict:fetch(State#state.next_slot, State#state.wished_slots)]),
-			%log("[~p]Lengh of wished slots: [~p]",[State#state.station,length(dict:fetch(State#state.next_slot, State#state.wished_slots))]),
-			length(dict:fetch(State#state.next_slot, State#state.wished_slots));
-		false ->
-			0 % trigger random
-	end,
-	CalculatedSlot = if
-		Count < 2 ->
-			State#state.next_slot;
-		true ->
-			CollisionFreeUsedSlots = dict:filter(fun(_Key, Value) -> length(Value) == 1 end, State#state.wished_slots),
-			UsedSlots = dict:fetch_keys(CollisionFreeUsedSlots),
-			%FreeSlots = werkzeug:shuffle(lists:subtract(lists:seq(0,19), UsedSlots)),
-			FreeSlots = lists:subtract(lists:seq(0,19), UsedSlots),
-			%log("[~p] used slots [~p]",[State#state.station,UsedSlots]),
-			%log("[~p] free slots [~p]",[State#state.station,FreeSlots]),
-			%log("[~p] free slots length [~p]",[State#state.station,length(FreeSlots)]),
-			if 
+			WishedSlots = slots_with_only_one_wish(State#state.wished_slots),
+			FreeSlots = lists:subtract(lists:seq(0,19), WishedSlots),
+			if
 				length(FreeSlots) == 0 ->
-					%log("KANNNICHTSEIN"), 
 					0; % ugly fallback, no free slot found!
-				true -> 
-					%[ TempSlot | _ ] = FreeSlots,
+				true ->
 					FreeSlotsLength = length(FreeSlots),
-					%log("[~p]true, length: [~p], is_number: [~p]",[State#state.station,FreeSlotsLength, is_integer(FreeSlotsLength)]),
-					%%log("[~p] random",[State#state.station,radnom:uniform(length(FreeSlots))]),
 					RandomElementIndex = random:uniform(FreeSlotsLength),
-					%log("[~p] random(length(FreeSlots)): [~p]",[State#state.station,RandomElementIndex]),
-					TempSlot = lists:nth(RandomElementIndex,FreeSlots),
-					TempSlot
-			end
-	end,
-	%log("[~p]CalculatedSlot [~p]",[State#state.station,CalculatedSlot]),
-	CalculatedSlot.
+					lists:nth(RandomElementIndex,FreeSlots)
+			end;
+		false ->
+			% "our" slot is still ours
+			State#state.next_slot
+	end.
+
+slots_with_only_one_wish(Slots) ->
+	dict:fetch_keys(dict:filter(fun(_Key, Value) -> length(Value) == 1 end, Slots)).
+
+slot_wished_by_more_than_two(Slot, Slots) ->
+  case dict:is_key(Slot, Slots) of
+  	true -> length(dict:fetch(Slot, Slots)) > 1;
+  	false -> false
+  end.
 
 slot_collision(Slot, UsedSlots) ->
 	dict:is_key(Slot, UsedSlots).

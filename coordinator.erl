@@ -117,6 +117,7 @@ calculate_next_slot(State) ->
 	case slot_wished_only_by_me(State#state.next_slot, State#state.wished_slots) of
 		true ->
 			% "our" slot is still ours
+			log("[~p] Calculated Slot: [~p]",[State#state.station,State#state.next_slot],State#state.station),
 			State#state.next_slot;
 		% collision in wishlist, find alternative.
 		false ->
@@ -128,7 +129,9 @@ calculate_next_slot(State) ->
 				true ->
 					FreeSlotsLength = length(FreeSlots),
 					RandomElementIndex = random:uniform(FreeSlotsLength),
-					lists:nth(RandomElementIndex,FreeSlots)
+					Result = lists:nth(RandomElementIndex,FreeSlots),
+					log("[~p] Collision: Calculated Slot: [~p]",[State#state.station,Result],State#state.station),
+					Result
 			end
 	end.
 
@@ -161,8 +164,8 @@ terminate(normal,State)->
 
 log(Message) ->
 	util:log("Coordinator.log",Message).
-log(Message, Data) ->
-	util:log("Coordinator.log",Message, Data).
+log(Message, Data, Station) ->
+	util:log("Coordinator"++[Station]++".log",Message, Data).
 
 %% durch gen_server vorgegeben
 handle_call(_Request, _From, State) ->

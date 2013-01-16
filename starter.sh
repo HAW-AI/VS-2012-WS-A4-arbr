@@ -2,7 +2,7 @@
 
 for i in `seq 1 $1`
 do
- ('/media/sda7/Studium/VS/Praktikum/A4/datasource/datasource-executable/32bit/DataSource'  14 $i | erl -coockie vsp -sname arbr_coordinator$i -noshell -s coordinator start $2 $i $3 $4) &
+ ('./datasource/datasource-executable/64bit/DataSource' 14 $i | erl -coockie vsp -sname arbr_coordinator$i -noshell -s coordinator start $2 $i $3 $4) &
 done
 
 

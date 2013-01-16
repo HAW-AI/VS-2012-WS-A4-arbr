@@ -27,7 +27,7 @@
 %% API Functions
 %%
 start() ->
-	log("Datasource wurde gestartet"),
+	%log("Datasource wurde gestartet"),
 	gen_server:start(?MODULE,[],[]).
 
 init(_Args) ->
@@ -39,10 +39,10 @@ init(_Args) ->
 poll(DatasourcePID) ->
 	case io:get_chars("", 24) of
 		eof ->
-			log("EOF erreicht"),
+			%log("EOF erreicht"),
 			exit(normal);
 		Value -> 
-			log("Value:,~p",[Value]),
+			%log("Value:,~p",[Value]),
 			gen_server:cast(DatasourcePID, {newvalue,Value}),
 			poll(DatasourcePID)
 	end.
@@ -52,9 +52,9 @@ handle_cast({newvalue, Value}, State) ->
 	{noreply, State#state{value=Value}};
 
 handle_cast({get_next_value, SenderPID}, State) ->
-	log("Der Sender hat die n�chste Nachricht angefordert"),
+	%log("Der Sender hat die n�chste Nachricht angefordert"),
 	%% sender wird als final state machine implementiert
-	log("N�chste Nachricht ist: ~p",[State#state.value]),
+	%log("N�chste Nachricht ist: ~p",[State#state.value]),
 	gen_fsm:send_event(SenderPID, {message, State#state.value}),
 	{noreply, State#state{value=""}};
 
@@ -62,7 +62,7 @@ handle_cast(stop, State) ->
   {stop, normal, State};
 
 handle_cast(Any, State) ->
-	log("Unbekannte Nachricht: ~p",[Any]),
+	%log("Unbekannte Nachricht: ~p",[Any]),
 	{noreply, State}.
 
 terminate(normal, State) ->

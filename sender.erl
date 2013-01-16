@@ -20,51 +20,52 @@
 %% API Functions
 %%
 start( Coordinator, Socket, Address, Port, Station )->
-  log("Starter: gestartet"),
+  %log("Starter: gestartet"),
   gen_fsm:start( ?MODULE, [ Coordinator, Socket, Address, Port, Station ], [] ).
 
 init([ Coordinator, Socket, Address, Port, Station ]) ->
-  log("Sender: init"),
+  %log("Sender: init"),
   { ok, Datasource } = datasource:start(),
   { ok, slot_received, #state{ coordinator=Coordinator, socket=Socket, datasource=Datasource, address=Address, port=Port, station=Station }}.
 
 % fetch message from datasource
 slot_received({ slot, Slot }, State) ->
-  log("[~p]Slot received: [~p]",[State#state.station, Slot]),
+  %log("[~p]Slot received: [~p]",[State#state.station, Slot]),
   gen_server:cast( State#state.datasource, { get_next_value, self() }),
-  log("[~p]Nach get_next_value",[State#state.station]),
+  %log("[~p]Nach get_next_value",[State#state.station]),
   { next_state, message_received, State#state{ slot=Slot } };
 slot_received(Unknown, State) ->
-  log("[[~p]UNKNOWN] slot_received received message [~p]",[State#state.station,Unknown]),
+  %log("[[~p]UNKNOWN] slot_received received message [~p]",[State#state.station,Unknown]),
   { next_state, slot_received, State}.
 
 message_received({ message, Message }, State) ->
-  log("[~p]message received",[State#state.station]),
+  %log("[~p]message received",[State#state.station]),
   % fetch next slot from coordinator
   gen_server:cast(State#state.coordinator, { nextSlot, self() }),
-  log("[[~p]received Message [~p]", [State#state.station,Message]),
+  %log("[[~p]received Message [~p]", [State#state.station,Message]),
   { next_state, next_slot_received, State#state{ message=Message} };
 message_received(Unknown, State) ->
-  log("[[~p]UNKNOWN] message_received received message [~p]",[State#state.station,Unknown]),
+  %log("[[~p]UNKNOWN] message_received received message [~p]",[State#state.station,Unknown]),
   { next_state, message_received, State}.
 
 next_slot_received({ nextSlot, Slot }, State) ->
-  log("[~p]next slot received: [~p]",[State#state.station, Slot]),
+  %log("[~p]next slot received: [~p]",[State#state.station, Slot]),
   % if slot not passed
   % deliver message, and wait for next frame
   % else ?
   TimeLeft = time_till_slot(State#state.slot)+20,
+  %log("[~p] TimeLeft: [~p]",[State#state.station, TimeLeft]),
   case TimeLeft > 0 of
     true ->
 %      timer:sleep(TimeLeft),
       gen_fsm:send_event_after(TimeLeft, deliver),
       { next_state, deliver, State#state{next_slot=Slot} };
     false ->
-      log("[~p]TimeLeft<=0",[State#state.station]),
+      %log("[~p]TimeLeft<=0",[State#state.station]),
       { next_state, slot_received, State }
   end;
 next_slot_received(Unknown, State) ->
-  log("[[~p]UNKNOWN] next_slot_received received message [~p]",[State#state.station,Unknown]),
+  %log("[[~p]UNKNOWN] next_slot_received received message [~p]",[State#state.station,Unknown]),
   { next_state, next_slot_received, State}.
 
 deliver(deliver, State) ->
@@ -74,7 +75,7 @@ deliver(deliver, State) ->
       Message = State#state.message,
       Packet = build_packet(Message, State#state.next_slot),
       gen_udp:send(Socket, Address, Port, Packet),
-      log("[~p]Nachricht gesendet",[State#state.station]),
+      %log("[~p]Nachricht gesendet",[State#state.station]),
       { next_state, slot_received, State }.
 
 handle_event(stop, _StateName, State) ->
@@ -82,7 +83,7 @@ handle_event(stop, _StateName, State) ->
   {stop, normal, State}.
 
 terminate( _StateName, _StateData, State) ->
-	log("[~p]TERMINATING!",[State#state.station]),
+	%log("[~p]TERMINATING!",[State#state.station]),
 	gen_server:cast(State#state.datasource, stop),
 	gen_udp:close(State#state.socket),
 	ok.
@@ -93,14 +94,14 @@ terminate( _StateName, _StateData, State) ->
 
 % Bit Syntax Expressions (Value:Size/TypeSpecifierList) http://www.erlang.org/doc/reference_manual/expressions.html
 build_packet( Message, Slot ) ->
-  log("build packet"),
+  %log("build packet"),
   Timestamp = timestamp(),
-  log("Timestamp [~p]", [Timestamp]),
-  log("Message [~p]", [Message]),
+  %log("Timestamp [~p]", [Timestamp]),
+  %log("Message [~p]", [Message]),
   Data = list_to_binary(Message),
   % Bit Syntax Expressions (Value:Size/TypeSpecifierList) http://www.erlang.org/doc/reference_manual/expressions.html
   Packet = << Data:24/binary,Slot:8/integer-big,Timestamp:64/integer-big>>,
-  log("Packet [~p]",[Packet]),
+  %log("Packet [~p]",[Packet]),
   Packet.
 
 log(Message) ->
@@ -116,7 +117,7 @@ handle_sync_event( _Event, _From, StateName, State ) ->
   {reply, ok, StateName, State}.
 
 handle_info( Info, StateName, State ) ->
-  log("Info: [~p]",[Info]),
+  %log("Info: [~p]",[Info]),
   {noreply, StateName, State}.
 
 code_change( _OldVsn, StateName, State, _Extra ) ->

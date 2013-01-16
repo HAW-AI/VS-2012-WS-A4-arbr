@@ -27,32 +27,32 @@
 %% API Functions
 %%
 start(CoordinatorPID,Socket,Station) ->
-	log("[~p]Receiver start",[Station]),
+	%log("[~p]Receiver start",[Station]),
 	gen_server:start(?MODULE,[CoordinatorPID, Socket,Station],[]).
 
 init([CoordinatorPID,Socket,Station]) ->
-	log("[~p]Receiver init",[Station]),
+	%log("[~p]Receiver init",[Station]),
 	{ok, #state{coordinatorPID=CoordinatorPID, socket=Socket, station=Station}}.
 
 terminate(normal, State) ->
-	log("TERMINATING!"),
-	gen_udp:close(State#state.socket),
-	log("Receiver wurde beendet").
+	%log("TERMINATING!"),
+	gen_udp:close(State#state.socket).
+	%log("Receiver wurde beendet").
 
 handle_info({udp, _Socket, _IP, _Port, Packet}, State) ->
-	log("[~p]Paket angekommen",[State#state.station]),
+	%log("[~p]Paket angekommen",[State#state.station]),
 	Timestamp = util:timestamp(),
 	gen_server:cast(State#state.coordinatorPID,{recieved, Timestamp, Packet}),
 	{noreply, State};
 handle_info(_Info, State) ->
-  log("Unknown Info"),
+  %log("Unknown Info"),
   {noreply, State}.
 
 handle_cast(stop, State) ->
   {stop, normal, State};
 
 handle_cast(Any, State) ->
-	log("Unbekannte Nachricht: ~p",[Any]),
+	%log("Unbekannte Nachricht: ~p",[Any]),
 	{noreply, State}.
 
 

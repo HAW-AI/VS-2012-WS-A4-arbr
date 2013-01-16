@@ -124,7 +124,7 @@ calculate_next_slot(State) ->
 			% "our" slot is still ours
 			State#state.next_slot;
 		% collision in wishlist, find alternative.
-		true ->
+		false ->
 			WishedSlots = slots_with_only_one_wish(State#state.wished_slots),
 			FreeSlots = lists:subtract(lists:seq(0,19), WishedSlots),
 			if

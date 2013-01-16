@@ -75,10 +75,6 @@ init([StringRecPort,SendPort,Station,StringMulticastIP,StringLocalIP])->
 				}}.
 
 next_frame_timer(_Station) ->
-	%log("[~p]Next frame timer",[Station]),
-	%log("[~p]Timestamp: [~p]",[Station,util:timestamp()]),
-	%log("[~p]Millisec: [~p]",[Station,(util:timestamp() rem 1000)]),
-	%log("[~p]Timediff: [~p]",[Station,1000 - (util:timestamp() rem 1000)]),
 	erlang:send_after(1000 - (util:timestamp() rem 1000), self(), frame_start).
 
 handle_cast(frame_start, State) ->
@@ -87,7 +83,7 @@ handle_cast(frame_start, State) ->
 	CollisionFreeMessages = dict:filter(fun(_Key, Value) -> length(Value) == 1 end, State#state.used_slots),
 	dict:fold(fun(_Key, Value, _Accu) -> gen_server:cast(self(),{ datasink, Value }) end, ok, CollisionFreeMessages),
 	% did we collide in previous frame?
-	Collided = lists:length(dict:fetch(State#state.next_slot, State#state.used_slots)) > 1,
+	%Collided = lists:length(dict:fetch(State#state.next_slot, State#state.used_slots)) > 1,
 	% send wished or free slot to sender
 	Slot = calculate_next_slot(State),
 	%log("[~p]Sending nextslot",[State#state.station]),
@@ -107,8 +103,7 @@ handle_cast({recieved, _RecievedTimestamp, Packet}, State)->
 
 	WishedSlots = case slot_collision(Slot, State#state.used_slots) of
 		true ->
-			dict:erase(SlotWish, State#state.wished_slots),
-			ok;
+			dict:erase(SlotWish, State#state.wished_slots);
 		false ->
 			dict:append(SlotWish, StationNumber, State#state.wished_slots)
 	end,

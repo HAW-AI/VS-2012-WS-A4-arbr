@@ -110,7 +110,7 @@ handle_cast({recieved, _RecievedTimestamp, Packet}, State)->
 			dict:erase(SlotWish, State#state.wished_slots),
 			ok;
 		false ->
-			dict:append(SlotWish, StationNumber, State#state.wished_slots),
+			dict:append(SlotWish, StationNumber, State#state.wished_slots)
 	end,
 	UsedSlots = dict:append(Slot, { Station, StationNumber, Data }, State#state.used_slots),
 	{noreply, State#state{ used_slots=UsedSlots, wished_slots=WishedSlots }};
@@ -119,7 +119,10 @@ handle_cast(Any, State)->
 	{noreply,State}.
 
 calculate_next_slot(State) ->
-	case slot_wished_by_more_than_two(State#state.next_slot, State#state.wished_slots) of
+	case slot_wished_only_by_me(State#state.next_slot, State#state.wished_slots) of
+		true ->
+			% "our" slot is still ours
+			State#state.next_slot;
 		% collision in wishlist, find alternative.
 		true ->
 			WishedSlots = slots_with_only_one_wish(State#state.wished_slots),
@@ -131,18 +134,15 @@ calculate_next_slot(State) ->
 					FreeSlotsLength = length(FreeSlots),
 					RandomElementIndex = random:uniform(FreeSlotsLength),
 					lists:nth(RandomElementIndex,FreeSlots)
-			end;
-		false ->
-			% "our" slot is still ours
-			State#state.next_slot
+			end
 	end.
 
 slots_with_only_one_wish(Slots) ->
 	dict:fetch_keys(dict:filter(fun(_Key, Value) -> length(Value) == 1 end, Slots)).
 
-slot_wished_by_more_than_two(Slot, Slots) ->
+slot_wished_only_by_me(Slot, Slots) ->
   case dict:is_key(Slot, Slots) of
-  	true -> length(dict:fetch(Slot, Slots)) > 1;
+  	true -> length(dict:fetch(Slot, Slots)) == 1;
   	false -> false
   end.
 

@@ -89,7 +89,7 @@ handle_cast(frame_start, State) ->
 	%log("[~p]Sending nextslot",[State#state.station]),
 	gen_fsm:send_event(State#state.senderPID, { slot, Slot }),
 	next_frame_timer(State#state.station),
-	{noreply, State#state{ used_slots=dict:new(), wished_slots=dict:new()}};
+	{noreply, State#state{ used_slots=dict:new(), wished_slots=dict:new(), next_slot=Slot}};
 
 handle_cast({datasink, Data},State)->
 	%log("[~p]Neue Nachricht empfangen: ~p",[State#state.station,Data]),

@@ -13,7 +13,7 @@
 
 -define(SENDPORT,14010).
 
--record(state, {receiverPID, senderPID, sendport, recport, wished_slots=dict:new(), used_slots=dict:new(), next_slot,station }).
+-record(state, {receiverPID, senderPID, sendport, recport, wished_slots=dict:new(), used_slots=dict:new(), next_slot, station }).
 
 start([RecPort,Station,MulticastIP,LocalIP])->
 	%log("Coordinator gestartet"),
@@ -86,6 +86,8 @@ handle_cast(frame_start, State) ->
 	% send all non collided messages to sink (ugly hack!)
 	CollisionFreeMessages = dict:filter(fun(_Key, Value) -> length(Value) == 1 end, State#state.used_slots),
 	dict:fold(fun(_Key, Value, _Accu) -> gen_server:cast(self(),{ datasink, Value }) end, ok, CollisionFreeMessages),
+	% did we collide in previous frame?
+	Collided = lists:length(dict:fetch(State#state.next_slot, State#state.used_slots)) > 1,
 	% send wished or free slot to sender
 	Slot = calculate_next_slot(State),
 	%log("[~p]Sending nextslot",[State#state.station]),
@@ -102,13 +104,14 @@ handle_cast({recieved, _RecievedTimestamp, Packet}, State)->
 	{ Station, StationNumber, Data, SlotWish, Timestamp} = parse_packet(Packet),
 	Slot = util:slot_from(Timestamp), % or from RecievedTimestamp?
 
-	case slot_collision(Slot, State#state.used_slots) of
+
+	WishedSlots = case slot_collision(Slot, State#state.used_slots) of
 		true ->
-			ok;%log("[~p]Collision!",[State#state.station]); % by dict:fetch(Slot, State#state.used_slots)
+			dict:erase(SlotWish, State#state.wished_slots),
+			ok;
 		false ->
-			ok
+			dict:append(SlotWish, StationNumber, State#state.wished_slots),
 	end,
-	WishedSlots = dict:append(SlotWish, StationNumber, State#state.wished_slots),
 	UsedSlots = dict:append(Slot, { Station, StationNumber, Data }, State#state.used_slots),
 	{noreply, State#state{ used_slots=UsedSlots, wished_slots=WishedSlots }};
 handle_cast(Any, State)->

@@ -13,7 +13,7 @@
 
 -define(SENDPORT,14010).
 
--record(state, {receiverPID, senderPID, sendport, recport, wished_slots=dict:new(), used_slots=dict:new(), next_slot, station }).
+-record(state, {receiverPID, senderPID, sendport, recport, wished_slots=dict:new(), used_slots=dict:new(), next_slot, station, first=true }).
 
 start([RecPort,Station,MulticastIP,LocalIP])->
 	%log("Coordinator gestartet"),
@@ -89,7 +89,7 @@ handle_cast(frame_start, State) ->
 	%log("[~p]Sending nextslot",[State#state.station]),
 	gen_fsm:send_event(State#state.senderPID, { slot, Slot }),
 	next_frame_timer(State#state.station),
-	{noreply, State#state{ used_slots=dict:new(), wished_slots=dict:new(), next_slot=Slot}};
+	{noreply, State#state{ used_slots=dict:new(), wished_slots=dict:new(), next_slot=Slot, first=false}};
 
 handle_cast({datasink, Data},State)->
 	%log("[~p]Neue Nachricht empfangen: ~p",[State#state.station,Data]),
@@ -114,7 +114,7 @@ handle_cast(Any, State)->
 	{noreply,State}.
 
 calculate_next_slot(State) ->
-	case slot_wished_only_by_me(State#state.next_slot, State#state.wished_slots) of
+	case slot_wished_only_by_me(State#state.next_slot, State#state.wished_slots, State#state.first) of
 		true ->
 			% "our" slot is still ours
 			log("[~p] Calculated Slot: [~p]",[State#state.station,State#state.next_slot],State#state.station),
@@ -138,11 +138,8 @@ calculate_next_slot(State) ->
 slots_with_only_one_wish(Slots) ->
 	dict:fetch_keys(dict:filter(fun(_Key, Value) -> length(Value) == 1 end, Slots)).
 
-slot_wished_only_by_me(Slot, Slots) ->
-  case dict:is_key(Slot, Slots) of
-  	true -> length(dict:fetch(Slot, Slots)) == 1;
-  	false -> false
-  end.
+slot_wished_only_by_me(Slot, Slots, First) ->
+  Frist or dict:is_key(Slot, Slots).
 
 slot_collision(Slot, UsedSlots) ->
 	dict:is_key(Slot, UsedSlots).

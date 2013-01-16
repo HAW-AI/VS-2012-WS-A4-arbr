@@ -99,14 +99,7 @@ handle_cast({recieved, _RecievedTimestamp, Packet}, State)->
 	%log("[~p]Coordinator recieved",[State#state.station]),
 	{ Station, StationNumber, Data, SlotWish, Timestamp} = parse_packet(Packet),
 	Slot = util:slot_from(Timestamp), % or from RecievedTimestamp?
-
-
-	WishedSlots = case slot_collision(Slot, State#state.used_slots) of
-		true ->
-			dict:erase(SlotWish, State#state.wished_slots);
-		false ->
-			dict:append(SlotWish, StationNumber, State#state.wished_slots)
-	end,
+	WishedSlots = dict:append(SlotWish, StationNumber, State#state.wished_slots),
 	UsedSlots = dict:append(Slot, { Station, StationNumber, Data }, State#state.used_slots),
 	{noreply, State#state{ used_slots=UsedSlots, wished_slots=WishedSlots }};
 handle_cast(Any, State)->
@@ -139,7 +132,12 @@ slots_with_only_one_wish(Slots) ->
 	dict:fetch_keys(dict:filter(fun(_Key, Value) -> length(Value) == 1 end, Slots)).
 
 slot_wished_only_by_me(Slot, Slots, First) ->
-  Frist or dict:is_key(Slot, Slots).
+  First or case dict:is_key(Slot, Slots) of
+  	true ->
+  	  lists:length(dict:fetch(Slot,Slots)) == 1;
+  	false ->
+  	  false
+  end.
 
 slot_collision(Slot, UsedSlots) ->
 	dict:is_key(Slot, UsedSlots).

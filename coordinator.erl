@@ -61,7 +61,7 @@ init([StringRecPort,SendPort,Station,StringMulticastIP,StringLocalIP])->
 	gen_udp:controlling_process(SendSocket, SenderPID),
 
 	%log("[~p]Coordinator - alle Sockets geöffnet, und sender/receiver gestartet",[Station]),
-	next_frame_timer(Station),
+	first_frame_timer(Station),
 	random:seed(now()),
 	NextSlot = random:uniform(20) -1,
 
@@ -74,8 +74,15 @@ init([StringRecPort,SendPort,Station,StringMulticastIP,StringLocalIP])->
 				station=Station
 				}}.
 
+first_frame_timer(_Station) ->
+	erlang:send_after(1000 - (util:timestamp() rem 1000), self(), first_frame).
+
 next_frame_timer(_Station) ->
 	erlang:send_after(1000 - (util:timestamp() rem 1000), self(), frame_start).
+
+handle_cast(first_frame, State) ->
+	next_frame_timer(State#state.station),
+	{noreply, State};
 
 handle_cast(frame_start, State) ->
 	%log("[~p]=========================Coordinator: start frame==================================",[State#state.station]),
@@ -134,7 +141,7 @@ slots_with_only_one_wish(Slots) ->
 slot_wished_only_by_me(Slot, Slots, First) ->
   First or case dict:is_key(Slot, Slots) of
   	true ->
-  	  lists:length(dict:fetch(Slot,Slots)) == 1;
+  	  length(dict:fetch(Slot,Slots)) == 1;
   	false ->
   	  false
   end.

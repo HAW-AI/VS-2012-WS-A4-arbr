@@ -82,7 +82,7 @@ next_frame_timer(_Station) ->
 
 handle_cast(first_frame, State) ->
 	next_frame_timer(State#state.station),
-	{noreply, State#state{ used_slots=dict:new(), wished_slots=dict:new(), first=false}};
+	{noreply, State#state{ used_slots=dict:new(), wished_slots=dict:new(), first=true}};
 
 handle_cast(frame_start, State) ->
 	%log("[~p]=========================Coordinator: start frame==================================",[State#state.station]),
@@ -114,14 +114,17 @@ handle_cast(Any, State)->
 	{noreply,State}.
 
 calculate_next_slot(State) ->
-	case slot_wished_only_by_me(State#state.next_slot, State#state.wished_slots, State#state.first) of
+	WishedSlots = slots_with_only_one_wish(State#state.wished_slots),
+	case slot_wished_only_by_me(State#state.next_slot, State#state.wished_slots, State#state.first) and not State#state.first of
 		true ->
 			% "our" slot is still ours
-			log("[~p] Calculated Slot: [~p]",[State#state.station,State#state.next_slot],State#state.station),
+			%log("[~p] Calculated Slot: [~p]",[State#state.station,State#state.next_slot],State#state.station),
+			%log("(true)Wished: [~p] Slot: [~p]",[WishedSlots,State#state.next_slot],State#state.station),
 			State#state.next_slot;
 		% collision in wishlist, find alternative.
 		false ->
-			WishedSlots = slots_with_only_one_wish(State#state.wished_slots),
+			%WishedSlots = slots_with_only_one_wish(State#state.wished_slots),
+			%log("[~p]Wished: [~p]",[State#state.station,WishedSlots],State#state.station),
 			FreeSlots = lists:subtract(lists:seq(0,19), WishedSlots),
 			if
 				length(FreeSlots) == 0 ->
@@ -130,7 +133,7 @@ calculate_next_slot(State) ->
 					FreeSlotsLength = length(FreeSlots),
 					RandomElementIndex = random:uniform(FreeSlotsLength),
 					Result = lists:nth(RandomElementIndex,FreeSlots),
-					log("[~p] Collision: Calculated Slot: [~p]",[State#state.station,Result],State#state.station),
+					%log("(false) Wished: [~p] Slot: [~p] Calculated Slot: [~p]",[WishedSlots,State#state.next_slot,Result],State#state.station),
 					Result
 			end
 	end.

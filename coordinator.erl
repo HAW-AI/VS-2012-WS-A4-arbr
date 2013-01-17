@@ -173,10 +173,16 @@ log(Message, Data, Station) ->
 handle_call(_Request, _From, State) ->
   {reply, ok, State}.
 
+handle_info(first_frame, State) ->
+  %log("[~p]Got frame_start",[State#state.station]),
+  gen_server:cast(self(), first_frame),
+  {noreply, State};
+
 handle_info(frame_start, State) ->
   %log("[~p]Got frame_start",[State#state.station]),
   gen_server:cast(self(), frame_start),
   {noreply, State};
+
 
 handle_info(_Info, State) ->
   {noreply, State}.

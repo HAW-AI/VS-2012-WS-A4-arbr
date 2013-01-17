@@ -82,7 +82,7 @@ next_frame_timer(_Station) ->
 
 handle_cast(first_frame, State) ->
 	next_frame_timer(State#state.station),
-	{noreply, State};
+	{noreply, State#state{ used_slots=dict:new(), wished_slots=dict:new(), first=false}};
 
 handle_cast(frame_start, State) ->
 	%log("[~p]=========================Coordinator: start frame==================================",[State#state.station]),

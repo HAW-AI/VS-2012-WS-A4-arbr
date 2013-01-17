@@ -41,7 +41,7 @@ slot_received(Unknown, State) ->
 message_received({ message, Message }, State) ->
   %log("[~p]message received",[State#state.station]),
   %log("[[~p]received Message [~p]", [State#state.station,Message]),
-  TimeLeft = time_till_slot(State#state.slot),
+  TimeLeft = time_till_slot(State#state.slot)+20,
   case TimeLeft > 0 of
     true ->
 %      timer:sleep(TimeLeft),

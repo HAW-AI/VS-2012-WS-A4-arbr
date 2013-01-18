@@ -109,6 +109,12 @@ handle_cast({recieved, _RecievedTimestamp, Packet}, State)->
 	WishedSlots = dict:append(SlotWish, StationNumber, State#state.wished_slots),
 	UsedSlots = dict:append(Slot, { Station, StationNumber, Data }, State#state.used_slots),
 	{noreply, State#state{ used_slots=UsedSlots, wished_slots=WishedSlots }};
+
+handle_cast(next_slot, State) ->
+	NextSlot = calculate_next_slot(State),
+	gen_fsm:send_event(State#state.senderPID, { next_slot, NextSlot }),
+	{noreply, State#state{next_slot=NextSlot}};
+
 handle_cast(Any, State)->
 	%log("Unknown message received: [~p]",[Any]),
 	{noreply,State}.
